@@ -59,6 +59,9 @@ public class InputExamplesController {
             // If a file is selected, set the file path in the text field
             filePathField.setText(selectedFile.getAbsolutePath());
         }
+        else {
+            statusLabel.setText("Error getting import text file");
+        }
     }
 
     @FXML
@@ -68,6 +71,7 @@ public class InputExamplesController {
             cancelRequested = true;
             generateButton.setText("Generate");
             statusLabel.setText("Generation canceled.");
+            selectFileButton.setDisable(false);
             isGenerating = false;
         } else {
             // Start generating regex
@@ -75,6 +79,7 @@ public class InputExamplesController {
             cancelRequested = false;
             generateButton.setText("Cancel");
             statusLabel.setText("Generating...");
+            selectFileButton.setDisable(true);
 
             // Record the start time to calculate elapsed time
             startTime = System.currentTimeMillis();

@@ -2,7 +2,6 @@ package com.owenjg.regexsynthesiser.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.stage.Stage;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.VBox;
@@ -11,7 +10,6 @@ import java.io.IOException;
 
 public class MenuController {
 
-    @FXML private Label titleText; // Reference to the label in the initial form
     private Stage stage;
 
     // Method to set the main stage
