@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.owenjg.regexsynthesiser.controller.DisplayRegexController" spacing="20" alignment="CENTER">
+    <padding>
+        <Insets top="20" bottom="20" left="20" right="20"/>
+    </padding>
+
+    <Label fx:id="titleText" text="Generated Regular Expression"/>
+
+    <Label fx:id="generatedRegexLabel" text="Generated Regular Expression will appear here" />
+
+    <Label fx:id="elapsedTimeText" text="" />
+
+    <Button text="Export Positive and Negative examples" onAction="#onExportButtonClick"/>
+
+    <Button text="Copy" onAction="#onCopyButtonClick"/>
+</VBox>

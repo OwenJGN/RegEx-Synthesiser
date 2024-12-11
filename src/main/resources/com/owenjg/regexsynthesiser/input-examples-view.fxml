@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.TextArea?>
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.owenjg.regexsynthesiser.controller.InputExamplesController" spacing="20" alignment="CENTER">
+    <padding>
+        <Insets top="20" bottom="20" left="20" right="20"/>
+    </padding>
+
+    <Label fx:id="titleText" text="Enter Positive and Negative Examples: e.g 'this' 'is' 'an' 'example'"/>
+
+    <Label text="Positive Examples"/>
+    <TextField fx:id="positiveExamplesField" promptText="Enter positive examples"/>
+
+    <Label text="Negative Examples"/>
+    <TextField fx:id="negativeExamplesField" promptText="Enter negative examples"/>
+
+    <Label text="Import examples from a text file:"/>
+    <Button fx:id="selectFileButton" text="Select File" onAction="#onSelectFileButtonClick"/>
+
+    <Button fx:id="generateButton" onAction="#onGenerateButtonClick"/>
+
+    <Label fx:id="statusLabel" text=""/>
+
+</VBox>
