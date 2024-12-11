@@ -1,6 +1,7 @@
 package com.owenjg.regexsynthesiser.synthesis;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Examples {
@@ -17,10 +18,20 @@ public class Examples {
     }
 
     public List<List<String>> splitPositiveAndNegativeInput(String positiveExamples, String negativeExamples){
-        return null;
+        List<String> pos = new ArrayList<>();
+        List<String> neg = new ArrayList<>();
+
+        pos.add("test");
+        neg.add("tedst");
+
+        List<List<String>> list = new ArrayList<>();
+        list.add(pos);
+        list.add(neg);
+
+        return list;
     }
 
-    public List<List<String>> splitPositiveAndNegativeFile(File file){
+    public List<List<String>> splitPositiveAndNegativeFile(String filePath){
         return null;
     }
 

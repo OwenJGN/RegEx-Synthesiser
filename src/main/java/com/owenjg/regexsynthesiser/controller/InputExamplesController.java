@@ -1,6 +1,7 @@
 package com.owenjg.regexsynthesiser.controller;
 
 import com.owenjg.regexsynthesiser.synthesis.Examples;
+import com.owenjg.regexsynthesiser.synthesis.RegexSynthesiser;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -14,30 +15,35 @@ import javafx.application.Platform;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 
 public class InputExamplesController {
 
-    @FXML private TextField positiveExamplesField;
-    @FXML private TextField negativeExamplesField;
-    @FXML private TextField filePathField;
+    @FXML
+    private TextField positiveExamplesField;
+    @FXML
+    private TextField negativeExamplesField;
 
-    @FXML private Button generateButton;
-    @FXML private Button selectFileButton; // Button for file selection
-    @FXML private Label statusLabel; // Label to display status message and elapsed time
+    @FXML
+    private Button generateButton;
+    @FXML
+    private Button selectFileButton; // Button for file selection
+    @FXML
+    private Label statusLabel; // Label to display status message and elapsed time
 
     private Boolean isGenerating = false;
     private Boolean cancelRequested = false;
     private Stage stage;
     private long startTime; // To track the start time for elapsed time calculation
     private String generatedRegEx;
+    private String filePath;
+    private RegexSynthesiser synthesiser;
 
     @FXML
     protected void initialize() {
         generateButton.setText("Generate");
         statusLabel.setText(""); // Initially, no status message
+        synthesiser = new RegexSynthesiser();
     }
 
     // Method to set the main stage
@@ -58,9 +64,9 @@ public class InputExamplesController {
 
         if (selectedFile != null) {
             // If a file is selected, set the file path in the text field
-            filePathField.setText(selectedFile.getAbsolutePath());
-        }
-        else {
+            filePath = selectedFile.getAbsolutePath();
+        } else {
+            filePath = "empty";
             statusLabel.setText("Error getting import text file");
         }
     }
@@ -68,91 +74,98 @@ public class InputExamplesController {
     @FXML
     protected void onGenerateButtonClick() throws IOException {
         if (isGenerating) {
-            // If already generating, cancel the generation
-            cancelRequested = true;
-            generateButton.setText("Generate");
-            statusLabel.setText("Generation canceled.");
-            selectFileButton.setDisable(false);
-            isGenerating = false;
+            synthesiser.cancelGeneration();
+            cancelGeneration();
         } else {
-            // Start generating regex
-            isGenerating = true;
-            cancelRequested = false;
-            generateButton.setText("Cancel");
-            statusLabel.setText("Generating...");
-            selectFileButton.setDisable(true);
-
-            // Record the start time to calculate elapsed time
-            startTime = System.currentTimeMillis();
-
-            // Run the regex generation in a separate thread to avoid blocking the UI
-            new Thread(() -> {
-                try {
-
-                    Examples examples = new Examples();
-                    List<List<String>> exs = examples.splitPositiveAndNegativeInput(positiveExamplesField.getText(), negativeExamplesField.getText());
-
-
-                    // If file path is provided, read examples from the file
-                    if (!filePathField.getText().isEmpty()) {
-                        String filePath = filePathField.getText();
-                        List<String> examplesFromFile = Files.readAllLines(Paths.get(filePath));
-                        // Add examples to the fields if the file has content
-                        //positiveExamples = examplesFromFile.get(0); // Assuming first line is for positive
-                        //negativeExamples = examplesFromFile.size() > 1 ? examplesFromFile.get(1) : "";
-                    }
-
-                    List<String> positiveExamples = exs.get(0);
-                    List<String> negativeExamples = exs.get(1);
-                    // Simulate a time-consuming regex generation process (can be replaced with actual logic)
-                    for (int i = 0; i < 10; i++) {
-                        if (cancelRequested) {
-                            // If cancel is requested, stop the generation
-                            break;
-                        }
-
-                        // Simulate regex generation work (replace with actual logic)
-                        Thread.sleep(500);  // Simulate delay
-                        generatedRegEx = "A REGEX";
-                        // Update the elapsed time and status every second
-                        if (!cancelRequested) {
-                            long elapsedTime = (System.currentTimeMillis() - startTime) / 1000; // Elapsed time in seconds
-                            Platform.runLater(() -> {
-                                statusLabel.setText("Generating... Elapsed time: " + elapsedTime + " seconds");
-                            });
-                        }
-                    }
-
-                    // Once finished (or cancelled), update UI on the main thread
-                    Platform.runLater(() -> {
-                        if (!cancelRequested) {
-                            // Proceed to the next scene to display the generated regular expression
-                            try {
-                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/owenjg/regexsynthesiser/display-regex-view.fxml"));
-                                VBox thirdRoot = fxmlLoader.load();
-
-                                // Pass the examples to the third controller
-                                DisplayRegexController thirdController = fxmlLoader.getController();
-                                thirdController.setValues(String.valueOf((System.currentTimeMillis() - startTime) / 1000), generatedRegEx);
-                                thirdController.setStage(stage);
-
-                                // Create and set the scene for the third form
-                                Scene thirdScene = new Scene(thirdRoot, 800, 600);
-                                stage.setScene(thirdScene);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        // Reset the button and state after process ends (on JavaFX thread)
-                        isGenerating = false;
-                        generateButton.setText("Generate");
-                        statusLabel.setText("Generation complete.");
-                    });
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }).start(); // Start the thread
+            startGeneration();
         }
+    }
+
+    private void startGeneration() {
+        isGenerating = true;
+        cancelRequested = false;
+        generateButton.setText("Cancel");
+        selectFileButton.setDisable(true);
+
+        // Record the start time to calculate elapsed time
+        startTime = System.currentTimeMillis();
+
+        // Create and set progress callback
+        synthesiser.setProgressCallback(new RegexSynthesiser.ProgressCallback() {
+            @Override
+            public void onProgress(long elapsedTime, String status) {
+                Platform.runLater(() -> {
+                    statusLabel.setText("Generating... Elapsed time: " + elapsedTime + " seconds");
+                });
+            }
+
+            @Override
+            public void onComplete(String generatedRegex) {
+                Platform.runLater(() -> {
+                    generatedRegEx = generatedRegex;
+                    try {
+                        // Load the next scene to display the generated regex
+                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/owenjg/regexsynthesiser/display-regex-view.fxml"));
+                        VBox thirdRoot = fxmlLoader.load();
+
+                        DisplayRegexController thirdController = fxmlLoader.getController();
+                        thirdController.setValues(String.valueOf((System.currentTimeMillis() - startTime) / 1000), generatedRegEx);
+                        thirdController.setStage(stage);
+
+                        Scene thirdScene = new Scene(thirdRoot, 800, 600);
+                        stage.setScene(thirdScene);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    resetGenerationState();
+                });
+            }
+
+            @Override
+            public void onCancel() {
+                Platform.runLater(() -> {
+                    cancelGeneration();
+                });
+            }
+        });
+
+        // Run the generation in a separate thread
+        new Thread(() -> {
+            try {
+                Examples examples = new Examples();
+                List<List<String>> exs = examples.splitPositiveAndNegativeInput(
+                        positiveExamplesField.getText(),
+                        negativeExamplesField.getText()
+                );
+
+                // If file path is provided, read examples from the file
+                if (!filePath.equals("empty")) {
+                    exs = examples.splitPositiveAndNegativeFile(filePath);
+                }
+
+                List<String> positiveExamples = exs.get(0);
+                List<String> negativeExamples = exs.get(1);
+
+                // Start the regex generation process
+                synthesiser.synthesise(positiveExamples, negativeExamples);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private void cancelGeneration() {
+        generateButton.setText("Generate");
+        statusLabel.setText("Generation canceled.");
+        selectFileButton.setDisable(false);
+        isGenerating = false;
+    }
+
+    private void resetGenerationState() {
+        isGenerating = false;
+        generateButton.setText("Generate");
+        statusLabel.setText("Generation complete.");
+        selectFileButton.setDisable(false);
     }
 }

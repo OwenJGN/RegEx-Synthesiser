@@ -12,7 +12,7 @@ public class RSApplication extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(RSApplication.class.getResource("main-view.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/owenjg/regexsynthesiser/main-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 800, 600);
 
         // Get the controller for the main view
