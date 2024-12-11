@@ -1,5 +1,6 @@
 package com.owenjg.regexsynthesiser.controller;
 
+import com.owenjg.regexsynthesiser.synthesis.Examples;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -87,19 +88,22 @@ public class InputExamplesController {
             // Run the regex generation in a separate thread to avoid blocking the UI
             new Thread(() -> {
                 try {
-                    // Get examples from text fields
-                    String positiveExamples = positiveExamplesField.getText();
-                    String negativeExamples = negativeExamplesField.getText();
+
+                    Examples examples = new Examples();
+                    List<List<String>> exs = examples.splitPositiveAndNegativeInput(positiveExamplesField.getText(), negativeExamplesField.getText());
+
 
                     // If file path is provided, read examples from the file
                     if (!filePathField.getText().isEmpty()) {
                         String filePath = filePathField.getText();
                         List<String> examplesFromFile = Files.readAllLines(Paths.get(filePath));
                         // Add examples to the fields if the file has content
-                        positiveExamples = examplesFromFile.get(0); // Assuming first line is for positive
-                        negativeExamples = examplesFromFile.size() > 1 ? examplesFromFile.get(1) : "";
+                        //positiveExamples = examplesFromFile.get(0); // Assuming first line is for positive
+                        //negativeExamples = examplesFromFile.size() > 1 ? examplesFromFile.get(1) : "";
                     }
 
+                    List<String> positiveExamples = exs.get(0);
+                    List<String> negativeExamples = exs.get(1);
                     // Simulate a time-consuming regex generation process (can be replaced with actual logic)
                     for (int i = 0; i < 10; i++) {
                         if (cancelRequested) {
@@ -120,8 +124,6 @@ public class InputExamplesController {
                     }
 
                     // Once finished (or cancelled), update UI on the main thread
-                    String finalPositiveExamples = positiveExamples;
-                    String finalNegativeExamples = negativeExamples;
                     Platform.runLater(() -> {
                         if (!cancelRequested) {
                             // Proceed to the next scene to display the generated regular expression
@@ -131,7 +133,7 @@ public class InputExamplesController {
 
                                 // Pass the examples to the third controller
                                 DisplayRegexController thirdController = fxmlLoader.getController();
-                                thirdController.setValues(finalPositiveExamples, finalNegativeExamples, String.valueOf((System.currentTimeMillis() - startTime) / 1000), generatedRegEx);
+                                thirdController.setValues(String.valueOf((System.currentTimeMillis() - startTime) / 1000), generatedRegEx);
                                 thirdController.setStage(stage);
 
                                 // Create and set the scene for the third form

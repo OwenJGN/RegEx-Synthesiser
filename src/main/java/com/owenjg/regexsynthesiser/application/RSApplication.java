@@ -1,4 +1,4 @@
-package com.owenjg.regexsynthesiser;
+package com.owenjg.regexsynthesiser.application;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;

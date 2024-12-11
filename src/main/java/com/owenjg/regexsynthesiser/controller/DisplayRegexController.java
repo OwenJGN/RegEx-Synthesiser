@@ -13,8 +13,7 @@ public class DisplayRegexController {
     @FXML private Label elapsedTimeText; // Label for the title
 
     private Stage stage;
-    private String positiveExamples;
-    private String negativeExamples;
+
     private String elapsedTime;
     private String generatedRegex;
     // Method to set the main stage
@@ -24,12 +23,10 @@ public class DisplayRegexController {
     }
 
     // Method to set examples from the previous form
-    public void setValues(String positiveExamples, String negativeExamples, String elapsedTime, String generatedRegex) {
+    public void setValues( String elapsedTime, String generatedRegex) {
         elapsedTimeText.setText("Time taken " + elapsedTime + "s");
         generatedRegexLabel.setText("Generated regex: " + generatedRegex);
         this.generatedRegex = generatedRegex;
-        this.positiveExamples = positiveExamples;
-        this.negativeExamples = negativeExamples;
         this.elapsedTime = elapsedTime;
     }
 

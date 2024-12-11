@@ -25,7 +25,7 @@ tasks.withType(JavaCompile) {
 
 application {
     mainModule = 'com.owenjg.regexsynthesiser'
-    mainClass = 'com.owenjg.regexsynthesiser.HelloApplication'
+    mainClass = 'com.owenjg.regexsynthesiser.application.RSApplication'
 }
 
 javafx {
