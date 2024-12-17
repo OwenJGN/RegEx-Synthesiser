@@ -16,5 +16,5 @@
 
     <Button text="Export Positive and Negative examples" onAction="#onExportButtonClick"/>
 
-    <Button text="Copy" onAction="#onCopyButtonClick"/>
+    <Button text="Copy Regex" onAction="#onCopyButtonClick"/>
 </VBox>

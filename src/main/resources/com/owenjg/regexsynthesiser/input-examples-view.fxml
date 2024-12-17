@@ -5,23 +5,30 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.HBox?>
 <VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.owenjg.regexsynthesiser.controller.InputExamplesController" spacing="20" alignment="CENTER">
     <padding>
         <Insets top="20" bottom="20" left="20" right="20"/>
     </padding>
 
-    <Label fx:id="titleText" text="Enter Positive and Negative Examples: e.g 'this' 'is' 'an' 'example'"/>
+    <Label fx:id="titleText" text="Enter Positive and Negative Examples (using | as a delimiter): e.g this|is|an|example"/>
 
     <Label text="Positive Examples"/>
-    <TextField fx:id="positiveExamplesField" promptText="Enter positive examples"/>
+    <TextArea fx:id="positiveExamplesField" promptText="Enter positive examples" wrapText="true"/>
 
     <Label text="Negative Examples"/>
-    <TextField fx:id="negativeExamplesField" promptText="Enter negative examples"/>
+    <TextArea fx:id="negativeExamplesField" promptText="Enter negative examples" wrapText="true"/>
 
-    <Label text="Import examples from a text file:"/>
+
+    <Label fx:id="fileLabel" text= "Import examples from a text file:"/>
+
     <Button fx:id="selectFileButton" text="Select File" onAction="#onSelectFileButtonClick"/>
 
-    <Button fx:id="generateButton" onAction="#onGenerateButtonClick"/>
+    <HBox spacing="10" alignment="CENTER">
+        <Button fx:id="generateButtonInput" text="Generate Input" onAction="#onGenerateButtonInputClick"/>
+        <Button fx:id="generateButtonFile" text="Generate File" onAction="#onGenerateButtonFileClick"/>
+    </HBox>
+
 
     <Label fx:id="statusLabel" text=""/>
 

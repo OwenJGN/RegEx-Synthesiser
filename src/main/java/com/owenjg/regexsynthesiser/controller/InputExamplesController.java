@@ -6,6 +6,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
@@ -15,24 +16,29 @@ import javafx.application.Platform;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class InputExamplesController {
 
     @FXML
-    private TextField positiveExamplesField;
+    private TextArea positiveExamplesField;
     @FXML
-    private TextField negativeExamplesField;
+    private TextArea negativeExamplesField;
 
     @FXML
-    private Button generateButton;
+    private Button generateButtonInput;
+
+    @FXML
+    private Button generateButtonFile;
     @FXML
     private Button selectFileButton; // Button for file selection
     @FXML
     private Label statusLabel; // Label to display status message and elapsed time
+    @FXML
+    private Label fileLabel;
 
     private Boolean isGenerating = false;
-    private Boolean cancelRequested = false;
     private Stage stage;
     private long startTime; // To track the start time for elapsed time calculation
     private String generatedRegEx;
@@ -41,7 +47,8 @@ public class InputExamplesController {
 
     @FXML
     protected void initialize() {
-        generateButton.setText("Generate");
+        generateButtonFile.setText("Generate from File");
+        generateButtonInput.setText("Generate from Input");
         statusLabel.setText(""); // Initially, no status message
         synthesiser = new RegexSynthesiser();
     }
@@ -55,6 +62,13 @@ public class InputExamplesController {
     // New method to handle file selection
     @FXML
     protected void onSelectFileButtonClick() {
+
+        if(filePath != null){
+            filePath = null;
+            fileLabel.setText("Import examples from a text file:");
+            selectFileButton.setText("Select File");
+            return;
+        }
         // Create a new FileChooser to select a file
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
@@ -65,26 +79,87 @@ public class InputExamplesController {
         if (selectedFile != null) {
             // If a file is selected, set the file path in the text field
             filePath = selectedFile.getAbsolutePath();
+            fileLabel.setText("Selected the file: " + selectedFile.getName());
+            selectFileButton.setText("Remove File");
         } else {
-            filePath = "empty";
             statusLabel.setText("Error getting import text file");
         }
     }
 
     @FXML
-    protected void onGenerateButtonClick() throws IOException {
+    protected void onGenerateButtonFileClick() throws IOException {
+        Examples examples = new Examples();
+        List<List<String>> exs;
+        List<String> positiveExamples;
+        List<String> negativeExamples;
+        if (this.filePath != null && !this.filePath.isEmpty()) {
+            if(examples.validateFileContent(filePath)){
+                exs = examples.splitPositiveAndNegativeFile(filePath);
+            }
+            else {
+                statusLabel.setText("ERROR: Invalid File");
+                return;
+            }
+
+            positiveExamples = exs.get(0);
+            negativeExamples = exs.get(1);
+
+            if(positiveExamples.isEmpty() && negativeExamples.isEmpty()){
+                statusLabel.setText("Both positive and negative examples are empty!");
+                return;
+            }
+        }
+        else {
+            statusLabel.setText("ERROR: No File Selected");
+            return;
+        }
+
+
+
         if (isGenerating) {
             synthesiser.cancelGeneration();
-            cancelGeneration();
+            cancelGeneration(generateButtonFile, "Generate from File");
+            generateButtonInput.setDisable(false);
         } else {
-            startGeneration();
+            generateButtonInput.setDisable(true);
+            generateButtonFile.setText("Cancel");
+            startGeneration(generateButtonFile, positiveExamples, negativeExamples,"Generate from File");
+        }
+    }
+    @FXML
+    protected void onGenerateButtonInputClick() throws IOException {
+        Examples examples = new Examples();
+        List<List<String>> exs;
+
+        exs = examples.splitPositiveAndNegativeInput(
+                positiveExamplesField.getText(),
+                negativeExamplesField.getText()
+        );
+
+        List<String> positiveExamples = exs.get(0);
+        List<String> negativeExamples = exs.get(1);
+
+        if(positiveExamples.isEmpty() && negativeExamples.isEmpty()){
+            statusLabel.setText("Both positive and negative examples are empty!");
+            return;
+        }
+
+
+        if (isGenerating) {
+            synthesiser.cancelGeneration();
+            cancelGeneration(generateButtonInput, "Generate from Input");
+            generateButtonFile.setDisable(false);
+        } else {
+            generateButtonFile.setDisable(true);
+            generateButtonInput.setText("Cancel");
+            startGeneration(generateButtonInput, positiveExamples, negativeExamples, "Generate from Input");
         }
     }
 
-    private void startGeneration() {
+    private void startGeneration(Button genButton, List<String> positiveExamples, List<String> negativeExamples, String buttonText) throws IOException {
+
         isGenerating = true;
-        cancelRequested = false;
-        generateButton.setText("Cancel");
+        Boolean cancelRequested = false;
         selectFileButton.setDisable(true);
 
         // Record the start time to calculate elapsed time
@@ -118,14 +193,14 @@ public class InputExamplesController {
                         e.printStackTrace();
                     }
 
-                    resetGenerationState();
+                    resetGenerationState(genButton, buttonText);
                 });
             }
 
             @Override
             public void onCancel() {
                 Platform.runLater(() -> {
-                    cancelGeneration();
+                    cancelGeneration(genButton, buttonText);
                 });
             }
         });
@@ -133,39 +208,28 @@ public class InputExamplesController {
         // Run the generation in a separate thread
         new Thread(() -> {
             try {
-                Examples examples = new Examples();
-                List<List<String>> exs = examples.splitPositiveAndNegativeInput(
-                        positiveExamplesField.getText(),
-                        negativeExamplesField.getText()
-                );
-
-                // If file path is provided, read examples from the file
-                if (!filePath.equals("empty")) {
-                    exs = examples.splitPositiveAndNegativeFile(filePath);
-                }
-
-                List<String> positiveExamples = exs.get(0);
-                List<String> negativeExamples = exs.get(1);
-
                 // Start the regex generation process
                 synthesiser.synthesise(positiveExamples, negativeExamples);
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }).start();
     }
 
-    private void cancelGeneration() {
-        generateButton.setText("Generate");
+    private void cancelGeneration(Button genButton, String buttonText) {
+        genButton.setText(buttonText);
         statusLabel.setText("Generation canceled.");
         selectFileButton.setDisable(false);
         isGenerating = false;
     }
 
-    private void resetGenerationState() {
+    private void resetGenerationState(Button genButton, String buttonText) {
         isGenerating = false;
-        generateButton.setText("Generate");
+        genButton.setText(buttonText);
         statusLabel.setText("Generation complete.");
         selectFileButton.setDisable(false);
     }
+
+
 }
