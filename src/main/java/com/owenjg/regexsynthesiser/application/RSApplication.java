@@ -20,6 +20,7 @@ public class RSApplication extends Application {
 
         // Pass the Stage to the controller
         controller.setStage(stage);
+        scene.getStylesheets().add(getClass().getResource("/com/owenjg/regexsynthesiser/styles.css").toExternalForm());
 
         stage.setTitle("Regular Expression Synthesiser");
         stage.setScene(scene);

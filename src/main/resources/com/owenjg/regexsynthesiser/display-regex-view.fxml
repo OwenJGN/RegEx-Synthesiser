@@ -8,13 +8,15 @@
         <Insets top="20" bottom="20" left="20" right="20"/>
     </padding>
 
-    <Label fx:id="titleText" text="Generated Regular Expression"/>
+    <Label fx:id="titleText" styleClass="title" text="Generated Regular Expression"/>
+    <Label fx:id="generatedRegexLabel" styleClass="subtitle" text="Generated Regular Expression will appear here" />
+    <Label fx:id="elapsedTimeText" styleClass="status-label" text="" />
 
-    <Label fx:id="generatedRegexLabel" text="Generated Regular Expression will appear here" />
+    <Button text="Export Positive and Negative examples" styleClass="button" onAction="#onExportButtonClick"/>
+    <Button text="Copy Regex" styleClass="button secondary" onAction="#onCopyButtonClick"/>
+    <Button text="Back" styleClass="button danger" onAction="#onBackButtonClick"/>
 
-    <Label fx:id="elapsedTimeText" text="" />
+    <Label fx:id="statusText" styleClass="status-label" text="" />
 
-    <Button text="Export Positive and Negative examples" onAction="#onExportButtonClick"/>
 
-    <Button text="Copy Regex" onAction="#onCopyButtonClick"/>
 </VBox>

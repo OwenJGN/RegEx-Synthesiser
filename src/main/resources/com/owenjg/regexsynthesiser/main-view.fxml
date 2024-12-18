@@ -7,9 +7,8 @@
     <padding>
         <Insets top="20" bottom="20" left="20" right="20"/>
     </padding>
+    <Label fx:id="titleText" styleClass="title" text="A Regular Expression Synthesiser using positive and negative examples!"/>
 
-    <Label fx:id="titleText" text="A Regular Expression Synthesiser using positive and negative examples!"/>
-
-    <Button text="Start" onAction="#onStartButtonClick"/>
-    <Button text="Quit" onAction="#onQuitButtonClick"/>
+    <Button text="Start" styleClass="button" onAction="#onStartButtonClick"/>
+    <Button text="Quit" styleClass="button danger" onAction="#onQuitButtonClick"/>
 </VBox>

@@ -22,6 +22,7 @@ public class MenuController {
     @FXML
     protected void onStartButtonClick() throws IOException {
         // Load second form (Examples input form)
+
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/owenjg/regexsynthesiser/input-examples-view.fxml"));
         VBox secondRoot = fxmlLoader.load();
 
@@ -31,6 +32,8 @@ public class MenuController {
 
         // Create and set the scene for the second form
         Scene secondScene = new Scene(secondRoot, 800, 600);
+        secondScene.getStylesheets().add(getClass().getResource("/com/owenjg/regexsynthesiser/styles.css").toExternalForm());
+
         stage.setScene(secondScene);
     }
 
