@@ -148,7 +148,7 @@ public class InputExamplesController {
         }
     }
 
-    private void startNewGeneration(boolean isFileMode, List<String> positiveExamples, List<String> negativeExamples) throws IOException {
+    private void startNewGeneration(boolean isFileMode, List<String> positiveExamples, List<String> negativeExamples){
         Button activeButton = isFileMode ? generateButtonFile : generateButtonInput;
         Button disabledButton = isFileMode ? generateButtonInput : generateButtonFile;
         String buttonText = isFileMode ? "Generate from File" : "Generate from Input";
@@ -174,6 +174,19 @@ public class InputExamplesController {
         }).start();
     }
 
+    private void resetGenerationState(Button genButton, String buttonText) {
+        isGenerating = false;
+        genButton.setText(buttonText);
+        selectFileButton.setDisable(false);
+    }
+
+    private void resetGenerationStateWithMessage(Button genButton, String buttonText, String message) {
+        isGenerating = false;
+        genButton.setText(buttonText);
+        selectFileButton.setDisable(false);
+        updateStatusLabel(message);
+    }
+
     private RegexSynthesiser.ProgressCallback createProgressCallback(Button genButton, String buttonText) {
         return new RegexSynthesiser.ProgressCallback() {
             @Override
@@ -191,7 +204,7 @@ public class InputExamplesController {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    resetGenerationState(genButton, buttonText);
+                    resetGenerationStateWithMessage(genButton, buttonText, "Generation complete.");
                 });
             }
 
@@ -200,6 +213,16 @@ public class InputExamplesController {
                 Platform.runLater(() ->
                         cancelGeneration(genButton, buttonText)
                 );
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                Platform.runLater(() -> {
+                    resetGenerationState(genButton, buttonText);
+                    updateStatusLabel("ERROR: " + errorMessage);
+                    generateButtonInput.setDisable(false);
+                    generateButtonFile.setDisable(false);
+                });
             }
         };
     }
@@ -225,12 +248,6 @@ public class InputExamplesController {
         isGenerating = false;
     }
 
-    private void resetGenerationState(Button genButton, String buttonText) {
-        isGenerating = false;
-        genButton.setText(buttonText);
-        updateStatusLabel("Generation complete.");
-        selectFileButton.setDisable(false);
-    }
 
     private void updateStatusLabel(String message) {
         // Clear previous styles
