@@ -20,18 +20,18 @@ public class StateEliminationAlgorithm {
     }
 
     private DFAState chooseStateForElimination(DFA dfa) {
-        // Choose optimal state for elimination
-        // Complex selection logic would go here
+        // TODO: Choose optimal state for elimination
+        // TODO: Complex selection logic would go here
         return dfa.getStates().iterator().next(); // Placeholder
     }
 
     private void eliminateState(DFA dfa, DFAState state) {
-        // Implement state elimination algorithm
-        // Would modify DFA transitions and create new regex transitions
+        // TODO:Implement state elimination algorithm
+        // TODO:Would modify DFA transitions and create new regex transitions
     }
 
     private String extractFinalRegex(DFA dfa) {
-        // Convert final DFA structure to regex string
+        // TODO:Convert final DFA structure to regex string
         return ""; // Placeholder
     }
 }

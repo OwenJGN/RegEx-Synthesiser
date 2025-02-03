@@ -138,12 +138,12 @@ public class DFAMinimiser {
             return false;
         }
 
-        // Add additional conditions as needed
+        // TODO: Add additional conditions as needed
         return true;
     }
 
     private int comparePairsByPriority(StatePair pair1, StatePair pair2) {
-        // Implement priority comparison logic
+        // TODO: Implement priority comparison logic
         // For example, prioritize states with more shared transitions
         return 0; // Placeholder
     }

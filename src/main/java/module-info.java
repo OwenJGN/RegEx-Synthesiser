@@ -1,6 +1,7 @@
 module com.owenjg.regexsynthesiser {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.graphics;
     requires java.desktop;
 
     opens com.owenjg.regexsynthesiser.application to javafx.fxml;

@@ -10,7 +10,7 @@
     <padding>
         <Insets top="20" bottom="20" left="20" right="20"/>
     </padding>
-    <Label fx:id="titleText" styleClass="title" text="Enter Positive and Negative Examples"/>
+    <Label fx:id="titleText" styleClass="title" text="Enter Positive and Negative Examples, with | as the separator (the|cat|jumped...)"/>
 
     <Label text="Positive Examples" styleClass="positive"/>
     <TextArea fx:id="positiveExamplesField" styleClass="text-area" promptText="Enter positive examples" wrapText="true"/>

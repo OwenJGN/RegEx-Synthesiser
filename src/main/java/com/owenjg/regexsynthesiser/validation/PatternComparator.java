@@ -10,7 +10,7 @@ public class PatternComparator {
     }
 
     private String canonicalize(String regex) {
-        // Convert regex to canonical form
+        // TODO:Convert regex to canonical form
         // This would involve normalizing alternations, quantifiers, etc.
         return regex; // Placeholder
     }

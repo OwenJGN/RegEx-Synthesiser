@@ -8,7 +8,7 @@ public class RegexSimplifier {
     }
 
     public String simplify(String regex) {
-        // Apply basic simplification
+        //TODO: Apply basic simplification
         String simplified = regex;
 
         // Remove redundant patterns
@@ -21,7 +21,7 @@ public class RegexSimplifier {
     }
 
     private String removeRedundancy(String regex) {
-        // Implementation of redundancy removal
+        // TODO:Implementation of redundancy removal
         return regex; // Placeholder
     }
 }

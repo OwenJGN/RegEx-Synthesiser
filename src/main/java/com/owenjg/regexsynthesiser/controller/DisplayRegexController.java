@@ -67,6 +67,7 @@ public class DisplayRegexController {
                     e.printStackTrace();
                 }
             }
+            assert selectedFile != null;
             updateStatusLabel("Successfully exported the file: " +selectedFile.getName());
 
         } catch (Exception e){
