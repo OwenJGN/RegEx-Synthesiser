@@ -24,6 +24,7 @@ public class InputExamplesController {
     @FXML private Button generateButtonFile;
     @FXML private Button selectFileButton;
     @FXML private Label statusLabel;
+    @FXML private Label currentStatusLabel;
     @FXML private Label fileLabel;
 
     private Stage stage;
@@ -36,7 +37,7 @@ public class InputExamplesController {
     @FXML
     protected void initialize() {
         setupButtons();
-        synthesiser = new RegexSynthesiser();
+        synthesiser = new RegexSynthesiser(currentStatusLabel);
     }
 
     private void setupButtons() {

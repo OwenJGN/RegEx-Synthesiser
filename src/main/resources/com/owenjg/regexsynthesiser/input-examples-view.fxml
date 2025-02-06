@@ -28,5 +28,7 @@
     </HBox>
 
     <Label fx:id="statusLabel" styleClass="status-label" text=""/>
+    <Label fx:id="currentStatusLabel" styleClass="status-label" text=""/>
+
 
 </VBox>

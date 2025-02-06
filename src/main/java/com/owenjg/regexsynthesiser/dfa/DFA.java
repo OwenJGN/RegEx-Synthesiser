@@ -4,9 +4,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class DFA {
-    private DFAState startState;
+    private static DFAState startState;
     private Set<DFAState> states;
-    private Set<DFATransition> transitions;
+    private static Set<DFATransition> transitions;
 
     public DFA() {
         this.states = new HashSet<>();
@@ -80,7 +80,7 @@ public class DFA {
                 .collect(Collectors.toSet());
     }
 
-    public Set<DFATransition> getTransitionsFrom(DFAState state) {
+    public static Set<DFATransition> getTransitionsFrom(DFAState state) {
         return transitions.stream()
                 .filter(t -> t.getSource().equals(state))
                 .collect(Collectors.toSet());
@@ -102,7 +102,7 @@ public class DFA {
         this.states.add(state);
     }
 
-    public DFAState getStartState() {
+    public static DFAState getStartState() {
         return startState;
     }
 

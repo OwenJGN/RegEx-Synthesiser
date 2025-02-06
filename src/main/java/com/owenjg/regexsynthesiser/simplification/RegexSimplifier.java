@@ -8,7 +8,6 @@ public class RegexSimplifier {
     }
 
     public String simplify(String regex) {
-        //TODO: Apply basic simplification
         String simplified = regex;
 
         // Remove redundant patterns
@@ -20,8 +19,26 @@ public class RegexSimplifier {
         return simplified;
     }
 
+    // In RegexSimplifier.java
     private String removeRedundancy(String regex) {
-        // TODO:Implementation of redundancy removal
-        return regex; // Placeholder
+        String simplified = regex;
+
+        // Remove repeated groups
+        simplified = simplified.replaceAll("\\(([^|()]+)\\)\\1+", "($1)+");
+
+        // Simplify alternations with common prefixes/suffixes
+        simplified = simplified.replaceAll("([a-zA-Z0-9]+)\\|\\1([a-zA-Z0-9]+)", "$1$2");
+
+        // Remove redundant character classes
+        simplified = simplified.replaceAll("\\[([a-zA-Z0-9])\\]", "$1");
+
+        // Combine adjacent quantifiers
+        simplified = simplified.replaceAll("([a-zA-Z0-9])\\+\\+", "$1+");
+        simplified = simplified.replaceAll("([a-zA-Z0-9])\\*\\*", "$1*");
+
+        // Simplify nested groups
+        simplified = simplified.replaceAll("\\(\\(([^()]+)\\)\\)", "($1)");
+
+        return simplified;
     }
 }

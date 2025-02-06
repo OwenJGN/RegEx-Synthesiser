@@ -5,6 +5,7 @@ import com.owenjg.regexsynthesiser.dfa.DFAState;
 import com.owenjg.regexsynthesiser.dfa.DFATransition;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class DFAMinimiser {
     private UnionFind unionFind;
@@ -138,14 +139,53 @@ public class DFAMinimiser {
             return false;
         }
 
-        // TODO: Add additional conditions as needed
-        return true;
+        // Don't merge if one is start state and other isn't
+        boolean isStart1 = state1.equals(DFA.getStartState());
+        boolean isStart2 = state2.equals(DFA.getStartState());
+        if (isStart1 != isStart2) {
+            return false;
+        }
+
+        // Check for compatible transitions
+        Set<Character> symbols1 = getTransitionSymbols(state1);
+        Set<Character> symbols2 = getTransitionSymbols(state2);
+
+        // States should have at least one symbol in common to be worth merging
+        Set<Character> intersection = new HashSet<>(symbols1);
+        intersection.retainAll(symbols2);
+
+        return !intersection.isEmpty();
     }
 
+
+    // In DFAMinimiser.java
     private int comparePairsByPriority(StatePair pair1, StatePair pair2) {
-        // TODO: Implement priority comparison logic
-        // For example, prioritize states with more shared transitions
-        return 0; // Placeholder
+        // Calculate shared transitions for pair1
+        int sharedTransitions1 = countSharedTransitions(pair1.state1, pair1.state2);
+
+        // Calculate shared transitions for pair2
+        int sharedTransitions2 = countSharedTransitions(pair2.state1, pair2.state2);
+
+        // Higher number of shared transitions means higher priority (lower value)
+        return Integer.compare(sharedTransitions2, sharedTransitions1);
+    }
+
+    private int countSharedTransitions(DFAState state1, DFAState state2) {
+        Set<Character> symbols1 = getTransitionSymbols(state1);
+        Set<Character> symbols2 = getTransitionSymbols(state2);
+
+        // Count symbols that both states have transitions for
+        Set<Character> intersection = new HashSet<>(symbols1);
+        intersection.retainAll(symbols2);
+
+        return intersection.size();
+    }
+
+    private Set<Character> getTransitionSymbols(DFAState state) {
+        return DFA.getTransitionsFrom(state)
+                .stream()
+                .map(DFATransition::getSymbol)
+                .collect(Collectors.toSet());
     }
 
     private static class StatePair {

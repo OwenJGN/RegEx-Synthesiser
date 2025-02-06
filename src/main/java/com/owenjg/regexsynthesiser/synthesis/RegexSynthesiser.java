@@ -5,6 +5,9 @@ import com.owenjg.regexsynthesiser.exceptions.RegexSynthesisException;
 import com.owenjg.regexsynthesiser.minimisation.DFAMinimiser;
 import com.owenjg.regexsynthesiser.simplification.RegexSimplifier;
 import com.owenjg.regexsynthesiser.validation.ExampleValidator;
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 
 import java.util.HashSet;
 import java.util.List;
@@ -20,14 +23,19 @@ public class RegexSynthesiser {
     private final StateEliminationAlgorithm stateElimination;
     private final RegexSimplifier regexSimplifier;
     private final ExampleValidator exampleValidator;
+    @FXML
+    private Label currentStatusLabel;
 
-    public RegexSynthesiser() {
+
+    public RegexSynthesiser(Label statusLabel) {  // Modified constructor
         this.prefixTreeBuilder = new PrefixTreeBuilder();
         this.dfaMinimiser = new DFAMinimiser();
         this.stateElimination = new StateEliminationAlgorithm();
         this.regexSimplifier = new RegexSimplifier();
         this.exampleValidator = new ExampleValidator();
+        this.currentStatusLabel = statusLabel;
     }
+
 
     // Interface for progress callback
     public interface ProgressCallback {
@@ -47,36 +55,42 @@ public class RegexSynthesiser {
 
         try {
             // Step 1: Validate input examples
+            updateStatus("Validating input examples...");
             if (checkCancellationAndUpdateProgress(startTime, "Validating input examples...")) {
                 return;
             }
             validateInputExamples(positiveExamples, negativeExamples);
 
             // Step 2: Build initial prefix tree
+            updateStatus("Building prefix tree from examples...");
             if (checkCancellationAndUpdateProgress(startTime, "Building prefix tree from examples...")) {
                 return;
             }
             DFA prefixTree = prefixTreeBuilder.buildPrefixTree(positiveExamples);
 
             // Step 3: Minimize DFA
+            updateStatus("Minimizing automaton...");
             if (checkCancellationAndUpdateProgress(startTime, "Minimizing automaton...")) {
                 return;
             }
             DFA minimizedDfa = dfaMinimiser.minimise(prefixTree, negativeExamples);
 
             // Step 4: Convert DFA to regex
+            updateStatus("Converting to regular expression...");
             if (checkCancellationAndUpdateProgress(startTime, "Converting to regular expression...")) {
                 return;
             }
             String regex = stateElimination.convertToRegex(minimizedDfa);
 
             // Step 5: Simplify the regex
+            updateStatus("Simplifying expression...");
             if (checkCancellationAndUpdateProgress(startTime, "Simplifying expression...")) {
                 return;
             }
             String simplifiedRegex = regexSimplifier.simplify(regex);
 
             // Step 6: Validate final regex
+            updateStatus("Validating generated expression...");
             if (checkCancellationAndUpdateProgress(startTime, "Validating generated expression...")) {
                 return;
             }
@@ -95,6 +109,14 @@ public class RegexSynthesiser {
             handleError("Unexpected error during synthesis: " + e.getMessage());
         }
     }
+
+    // Add this helper method to safely update the status label
+    private void updateStatus(String status) {
+        if (currentStatusLabel != null) {
+            Platform.runLater(() -> currentStatusLabel.setText(status));
+        }
+    }
+
 
     private boolean checkCancellationAndUpdateProgress(long startTime, String message) {
         try {
