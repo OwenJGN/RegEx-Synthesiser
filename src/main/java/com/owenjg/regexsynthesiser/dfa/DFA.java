@@ -4,9 +4,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class DFA {
-    private static DFAState startState;
+    private  DFAState startState;
     private Set<DFAState> states;
-    private static Set<DFATransition> transitions;
+    private  Set<DFATransition> transitions;
 
     public DFA() {
         this.states = new HashSet<>();
@@ -15,11 +15,9 @@ public class DFA {
 
     public DFA copy() {
         DFA newDfa = new DFA();
-
-        // Create map to track state correspondence
         Map<DFAState, DFAState> stateMap = new HashMap<>();
 
-        // Copy all states
+        // Copy states and maintain mapping
         for (DFAState oldState : states) {
             DFAState newState = new DFAState(oldState.getId());
             newState.setAccepting(oldState.isAccepting());
@@ -32,16 +30,18 @@ public class DFA {
             }
         }
 
-        // Copy all transitions using the state map
+        // Copy transitions using the state mapping
         for (DFATransition oldTransition : transitions) {
             DFAState newSource = stateMap.get(oldTransition.getSource());
-            DFAState newDestination = stateMap.get(oldTransition.getDestination());
-            DFATransition newTransition = new DFATransition(newSource, newDestination, oldTransition.getSymbol());
+            DFAState newDest = stateMap.get(oldTransition.getDestination());
+            DFATransition newTransition = new DFATransition(newSource, newDest, oldTransition.getSymbol());
             newDfa.addTransition(newTransition);
         }
 
         return newDfa;
     }
+
+
 
     public boolean accepts(String input) {
         if (startState == null) {
@@ -80,7 +80,7 @@ public class DFA {
                 .collect(Collectors.toSet());
     }
 
-    public static Set<DFATransition> getTransitionsFrom(DFAState state) {
+    public Set<DFATransition> getTransitionsFrom(DFAState state) {
         return transitions.stream()
                 .filter(t -> t.getSource().equals(state))
                 .collect(Collectors.toSet());
@@ -102,7 +102,7 @@ public class DFA {
         this.states.add(state);
     }
 
-    public static DFAState getStartState() {
+    public DFAState getStartState() {
         return startState;
     }
 
@@ -111,7 +111,9 @@ public class DFA {
     }
 
     public void addTransition(DFATransition transition) {
-        transitions.add(transition);
+        this.transitions.add(transition);
+        this.states.add(transition.getSource());
+        this.states.add(transition.getDestination());
     }
 
     public Set<DFAState> getStates() {
@@ -119,6 +121,6 @@ public class DFA {
     }
 
     public Set<DFATransition> getTransitions() {
-        return Collections.unmodifiableSet(transitions);
+        return new HashSet<>(transitions); // Return a copy instead of unmodifiable
     }
 }

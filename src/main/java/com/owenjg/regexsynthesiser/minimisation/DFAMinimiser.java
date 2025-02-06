@@ -16,22 +16,44 @@ public class DFAMinimiser {
         this.penaltyCalculator = new ComplexityPenaltyCalculator();
     }
 
-    private DFA simulateMerge(DFA original, DFAState state1, DFAState state2) {
-        // Create a copy of the original DFA to work with
-        DFA mergedDfa = new DFA();
+    public DFA minimise(DFA dfa, List<String> negativeExamples) {
+        DFA currentDfa = dfa.copy();
+        boolean changed;
 
-        // Create a mapping of old states to new states
+        do {
+            changed = false;
+            List<StatePair> pairs = findMergeablePairs(currentDfa);
+
+            for (StatePair pair : pairs) {
+                DFA mergedDfa = simulateMerge(currentDfa, pair.state1, pair.state2);
+
+                if (mergedDfa != null && isValidMerge(mergedDfa, negativeExamples)) {
+                    currentDfa = mergedDfa;
+                    changed = true;
+                    break;
+                }
+            }
+        } while (changed);
+
+        return currentDfa;
+    }
+
+    private DFA simulateMerge(DFA original, DFAState state1, DFAState state2) {
+        System.out.println("Attempting to merge states: " + state1.getId() + " and " + state2.getId());
+
+        DFA mergedDfa = new DFA();
         Map<DFAState, DFAState> stateMap = new HashMap<>();
 
-        // Create the merged state
+        // Create merged state
         DFAState mergedState = new DFAState(Math.min(state1.getId(), state2.getId()));
         mergedState.setAccepting(state1.isAccepting() || state2.isAccepting());
+        stateMap.put(state1, mergedState);
+        stateMap.put(state2, mergedState);
+        mergedDfa.addState(mergedState);
 
-        // Add all states except state1 and state2 to the new DFA
+        // Copy other states
         for (DFAState oldState : original.getStates()) {
-            if (oldState.equals(state1) || oldState.equals(state2)) {
-                stateMap.put(oldState, mergedState);
-            } else {
+            if (!oldState.equals(state1) && !oldState.equals(state2)) {
                 DFAState newState = new DFAState(oldState.getId());
                 newState.setAccepting(oldState.isAccepting());
                 stateMap.put(oldState, newState);
@@ -39,31 +61,50 @@ public class DFAMinimiser {
             }
         }
 
-        // Add the merged state to the new DFA
-        mergedDfa.addState(mergedState);
-
-        // Set the start state
-        if (original.getStartState().equals(state1) || original.getStartState().equals(state2)) {
-            mergedDfa.setStartState(mergedState);
-        } else {
-            mergedDfa.setStartState(stateMap.get(original.getStartState()));
+        // Set start state
+        DFAState oldStart = original.getStartState();
+        DFAState newStart = stateMap.get(oldStart);
+        if (newStart != null) {
+            mergedDfa.setStartState(newStart);
+            System.out.println("Set start state: " + newStart.getId());
         }
 
-        // Add transitions to the new DFA
-        for (DFATransition oldTransition : original.getTransitions()) {
-            DFAState newSource = stateMap.get(oldTransition.getSource());
-            DFAState newDest = stateMap.get(oldTransition.getDestination());
+        // Copy transitions
+        System.out.println("Original transitions:");
+        for (DFATransition t : original.getTransitions()) {
+            System.out.println(t.getSource().getId() + " --" + t.getSymbol() + "--> " + t.getDestination().getId());
+        }
 
-            // Create new transition with mapped states
-            DFATransition newTransition = new DFATransition(newSource, newDest, oldTransition.getSymbol());
+        for (DFATransition oldTrans : original.getTransitions()) {
+            DFAState newSource = stateMap.get(oldTrans.getSource());
+            DFAState newDest = stateMap.get(oldTrans.getDestination());
 
-            // Add transition, avoiding duplicates
-            if (!hasEquivalentTransition(mergedDfa, newTransition)) {
-                mergedDfa.addTransition(newTransition);
+            if (newSource != null && newDest != null) {
+                DFATransition newTrans = new DFATransition(newSource, newDest, oldTrans.getSymbol());
+                mergedDfa.addTransition(newTrans);
+                System.out.println("Added transition: " + newSource.getId() + " --" + newTrans.getSymbol() + "--> " + newDest.getId());
             }
         }
 
         return mergedDfa;
+    }
+
+
+    // Add this for debugging
+    private boolean isValidMerge(DFA mergedDfa, List<String> negativeExamples) {
+        System.out.println("Validating merge - States: " + mergedDfa.getStates().size() +
+                " Transitions: " + mergedDfa.getTransitions().size());
+
+        if (negativeExamples == null || negativeExamples.isEmpty()) {
+            return true;
+        }
+
+        for (String example : negativeExamples) {
+            if (mergedDfa.accepts(example)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean hasEquivalentTransition(DFA dfa, DFATransition transition) {
@@ -72,46 +113,6 @@ public class DFAMinimiser {
                         t.getDestination().equals(transition.getDestination()) &&
                         t.getSymbol() == transition.getSymbol()
         );
-    }
-
-    private boolean isValidMerge(DFA mergedDfa, List<String> negativeExamples) {
-        if (negativeExamples == null || negativeExamples.isEmpty()) {
-            return true;
-        }
-
-        // Check if the merged DFA accepts any negative examples
-        for (String example : negativeExamples) {
-            if (mergedDfa.accepts(example)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public DFA minimise(DFA dfa, List<String> negativeExamples) {
-        // Initialize UnionFind with all states
-        unionFind.initialize(dfa.getStates());
-
-        // Find mergeable states while respecting negative examples
-        List<StatePair> statePairs = findMergeablePairs(dfa);
-
-        // Sort pairs by merge priority (e.g., number of shared transitions)
-        Collections.sort(statePairs, this::comparePairsByPriority);
-
-        DFA currentDfa = dfa;
-
-        // Try merging each pair of states
-        for (StatePair pair : statePairs) {
-            DFA mergedDfa = simulateMerge(currentDfa, pair.state1, pair.state2);
-
-            if (isValidMerge(mergedDfa, negativeExamples)) {
-                currentDfa = mergedDfa;
-                unionFind.union(pair.state1, pair.state2);
-            }
-        }
-
-        return currentDfa;
     }
 
     private List<StatePair> findMergeablePairs(DFA dfa) {
@@ -124,7 +125,7 @@ public class DFAMinimiser {
                 DFAState state2 = states.get(j);
 
                 // Only add pairs that have potential for merging
-                if (canPotentiallyMerge(state1, state2)) {
+                if (canPotentiallyMerge(state1, state2, dfa)) {
                     pairs.add(new StatePair(state1, state2));
                 }
             }
@@ -133,22 +134,22 @@ public class DFAMinimiser {
         return pairs;
     }
 
-    private boolean canPotentiallyMerge(DFAState state1, DFAState state2) {
+    private boolean canPotentiallyMerge(DFAState state1, DFAState state2, DFA dfa) {
         // States with different accepting status cannot be merged
         if (state1.isAccepting() != state2.isAccepting()) {
             return false;
         }
 
         // Don't merge if one is start state and other isn't
-        boolean isStart1 = state1.equals(DFA.getStartState());
-        boolean isStart2 = state2.equals(DFA.getStartState());
+        boolean isStart1 = state1.equals(dfa.getStartState());
+        boolean isStart2 = state2.equals(dfa.getStartState());
         if (isStart1 != isStart2) {
             return false;
         }
 
         // Check for compatible transitions
-        Set<Character> symbols1 = getTransitionSymbols(state1);
-        Set<Character> symbols2 = getTransitionSymbols(state2);
+        Set<Character> symbols1 = getTransitionSymbols(state1, dfa);
+        Set<Character> symbols2 = getTransitionSymbols(state2, dfa);
 
         // States should have at least one symbol in common to be worth merging
         Set<Character> intersection = new HashSet<>(symbols1);
@@ -159,20 +160,20 @@ public class DFAMinimiser {
 
 
     // In DFAMinimiser.java
-    private int comparePairsByPriority(StatePair pair1, StatePair pair2) {
+    private int comparePairsByPriority(StatePair pair1, StatePair pair2, DFA dfa) {
         // Calculate shared transitions for pair1
-        int sharedTransitions1 = countSharedTransitions(pair1.state1, pair1.state2);
+        int sharedTransitions1 = countSharedTransitions(pair1.state1, pair1.state2, dfa);
 
         // Calculate shared transitions for pair2
-        int sharedTransitions2 = countSharedTransitions(pair2.state1, pair2.state2);
+        int sharedTransitions2 = countSharedTransitions(pair2.state1, pair2.state2, dfa);
 
         // Higher number of shared transitions means higher priority (lower value)
         return Integer.compare(sharedTransitions2, sharedTransitions1);
     }
 
-    private int countSharedTransitions(DFAState state1, DFAState state2) {
-        Set<Character> symbols1 = getTransitionSymbols(state1);
-        Set<Character> symbols2 = getTransitionSymbols(state2);
+    private int countSharedTransitions(DFAState state1, DFAState state2, DFA dfa) {
+        Set<Character> symbols1 = getTransitionSymbols(state1, dfa);
+        Set<Character> symbols2 = getTransitionSymbols(state2, dfa);
 
         // Count symbols that both states have transitions for
         Set<Character> intersection = new HashSet<>(symbols1);
@@ -181,8 +182,8 @@ public class DFAMinimiser {
         return intersection.size();
     }
 
-    private Set<Character> getTransitionSymbols(DFAState state) {
-        return DFA.getTransitionsFrom(state)
+    private Set<Character> getTransitionSymbols(DFAState state, DFA dfa) {
+        return dfa.getTransitionsFrom(state)
                 .stream()
                 .map(DFATransition::getSymbol)
                 .collect(Collectors.toSet());

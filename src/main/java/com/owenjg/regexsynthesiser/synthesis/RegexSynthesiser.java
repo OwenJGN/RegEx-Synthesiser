@@ -47,66 +47,32 @@ public class RegexSynthesiser {
     }
 
     public void synthesise(List<String> positiveExamples, List<String> negativeExamples) {
-        // Reset cancellation flag
-        cancelRequested = false;
-
-        // Start time tracking
-        long startTime = System.currentTimeMillis();
-
         try {
-            // Step 1: Validate input examples
-            updateStatus("Validating input examples...");
-            if (checkCancellationAndUpdateProgress(startTime, "Validating input examples...")) {
-                return;
-            }
-            validateInputExamples(positiveExamples, negativeExamples);
+            System.out.println("Positive examples: " + positiveExamples);
 
-            // Step 2: Build initial prefix tree
-            updateStatus("Building prefix tree from examples...");
-            if (checkCancellationAndUpdateProgress(startTime, "Building prefix tree from examples...")) {
-                return;
-            }
+            updateStatus("Building prefix tree...");
             DFA prefixTree = prefixTreeBuilder.buildPrefixTree(positiveExamples);
+            System.out.println("Prefix tree states: " + prefixTree.getStates().size());
+            System.out.println("Prefix tree transitions: " + prefixTree.getTransitions().size());
 
-            // Step 3: Minimize DFA
             updateStatus("Minimizing automaton...");
-            if (checkCancellationAndUpdateProgress(startTime, "Minimizing automaton...")) {
-                return;
-            }
             DFA minimizedDfa = dfaMinimiser.minimise(prefixTree, negativeExamples);
+            System.out.println("Minimized DFA states: " + minimizedDfa.getStates().size());
+            System.out.println("Minimized DFA transitions: " + minimizedDfa.getTransitions().size());
 
-            // Step 4: Convert DFA to regex
-            updateStatus("Converting to regular expression...");
-            if (checkCancellationAndUpdateProgress(startTime, "Converting to regular expression...")) {
-                return;
-            }
+            updateStatus("Converting to regex...");
             String regex = stateElimination.convertToRegex(minimizedDfa);
+            System.out.println("Raw regex: " + regex);
 
-            // Step 5: Simplify the regex
-            updateStatus("Simplifying expression...");
-            if (checkCancellationAndUpdateProgress(startTime, "Simplifying expression...")) {
-                return;
-            }
             String simplifiedRegex = regexSimplifier.simplify(regex);
+            System.out.println("Simplified regex: " + simplifiedRegex);
 
-            // Step 6: Validate final regex
-            updateStatus("Validating generated expression...");
-            if (checkCancellationAndUpdateProgress(startTime, "Validating generated expression...")) {
-                return;
-            }
-
-            //REMOVED AT THE MOMENT
-            //validateResult(simplifiedRegex, positiveExamples, negativeExamples);
-
-            // Complete the process if not cancelled
-            if (!cancelRequested && progressCallback != null) {
+            if (progressCallback != null) {
                 progressCallback.onComplete(simplifiedRegex);
             }
-
-        } catch (RegexSynthesisException e) {
-            handleError(e.getMessage());
         } catch (Exception e) {
-            handleError("Unexpected error during synthesis: " + e.getMessage());
+            e.printStackTrace();
+            handleError(e.getMessage());
         }
     }
 

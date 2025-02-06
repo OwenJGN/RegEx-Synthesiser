@@ -15,13 +15,20 @@ public class PrefixTreeBuilder {
         this.stateCounter = 0;
     }
 
+    // In PrefixTreeBuilder.java
     public DFA buildPrefixTree(List<String> positiveExamples) {
-        // Initialize DFA with start state
         DFAState startState = new DFAState(stateCounter++);
         dfa.setStartState(startState);
 
+        System.out.println("Building prefix tree...");
         for (String example : positiveExamples) {
+            System.out.println("Adding string: " + example);
             addStringToTree(example);
+        }
+
+        System.out.println("Prefix tree transitions:");
+        for (DFATransition t : dfa.getTransitions()) {
+            System.out.println(t.getSource().getId() + " --" + t.getSymbol() + "--> " + t.getDestination().getId());
         }
 
         return dfa;
