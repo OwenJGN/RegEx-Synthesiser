@@ -7,24 +7,24 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class StateEliminationAlgorithm {
-
     public String eliminateStates(DFA dfa) {
-        // Collect full paths to accepting states
-        List<String> fullPaths = new ArrayList<>();
+        System.out.println("Total States: " + dfa.getNumStates());
+        System.out.println("Start State: " + dfa.getStartState());
+        System.out.println("Accepting States: " + dfa.getStates().stream()
+                .filter(dfa::isAcceptingState)
+                .collect(Collectors.toSet()));
+        System.out.println("Alphabet: " + dfa.getAlphabet());
 
-        // Comprehensive path tracing
-        traceFullPaths(dfa, dfa.getStartState(), "", fullPaths);
-
-        // Debug: print extracted paths
-        System.out.println("Extracted Paths: " + fullPaths);
-
+        // Identify the key characteristics of the input strings
+        List<String> paths = extractGeneralizedPaths(dfa);
+        System.out.println("Extracted Paths: " + paths);
         // If no paths found, return empty string
-        if (fullPaths.isEmpty()) {
+        if (paths.isEmpty()) {
             return "";
         }
 
-        // Remove duplicates while preserving order
-        List<String> uniquePaths = new ArrayList<>(new LinkedHashSet<>(fullPaths));
+        // Remove duplicates and create generalized regex
+        List<String> uniquePaths = new ArrayList<>(new LinkedHashSet<>(paths));
 
         // If only one unique path, return it
         if (uniquePaths.size() == 1) {
@@ -35,20 +35,18 @@ public class StateEliminationAlgorithm {
         return "(" + String.join("|", uniquePaths) + ")";
     }
 
-    private void traceFullPaths(DFA dfa, int currentState, String currentPath,
-                                List<String> fullPaths) {
-        // If this is an accepting state, add the current path
-        if (dfa.isAcceptingState(currentState)) {
-            fullPaths.add(currentPath);
-            return;
-        }
-
-        // Track to prevent infinite recursion
+    private List<String> extractGeneralizedPaths(DFA dfa) {
+        List<String> fullPaths = new ArrayList<>();
         Set<Integer> visitedStates = new HashSet<>();
-        tracePaths(dfa, currentState, currentPath, fullPaths, visitedStates);
+
+        // Trace paths from start state
+        tracePaths(dfa, dfa.getStartState(), new StringBuilder(), fullPaths, visitedStates);
+
+        // Generalize the paths
+        return generalizePaths(fullPaths);
     }
 
-    private void tracePaths(DFA dfa, int currentState, String currentPath,
+    private void tracePaths(DFA dfa, int currentState, StringBuilder currentPath,
                             List<String> fullPaths, Set<Integer> visitedStates) {
         // Prevent infinite loops
         if (visitedStates.contains(currentState)) {
@@ -56,145 +54,112 @@ public class StateEliminationAlgorithm {
         }
         visitedStates.add(currentState);
 
+        // If this is an accepting state, add the current path
+        if (dfa.isAcceptingState(currentState)) {
+            fullPaths.add(currentPath.toString());
+        }
+
         // Explore all possible transitions
         for (char symbol : dfa.getAlphabet()) {
             int nextState = dfa.getTransition(currentState, symbol);
             if (nextState != DFA.INVALID_STATE) {
-                // Create a new set of visited states for each branch
+                StringBuilder newPath = new StringBuilder(currentPath);
+                newPath.append(symbol);
+
+                // Recursive exploration with a copy of visited states
                 Set<Integer> newVisitedStates = new HashSet<>(visitedStates);
-
-                String newPath = currentPath + symbol;
-
-                // If next state is an accepting state, add the path
-                if (dfa.isAcceptingState(nextState)) {
-                    fullPaths.add(newPath);
-                }
-
-                // Continue tracing
                 tracePaths(dfa, nextState, newPath, fullPaths, newVisitedStates);
             }
         }
     }
 
+    private List<String> generalizePaths(List<String> paths) {
+        if (paths.isEmpty()) {
+            return paths;
+        }
 
-    private List<String> cleanAndFilterPaths(List<String> paths) {
-        // Filter and clean paths to capture the structural pattern
+        // Find common patterns
+        String[] commonPatternParts = findCommonPatternParts(paths);
+
+        // If we can create a generalized pattern
+        if (commonPatternParts != null) {
+            return Collections.singletonList(createGeneralizedRegex(commonPatternParts));
+        }
+
+        // If no common pattern, return original paths with some generalization
         return paths.stream()
-                .filter(path -> {
-                    // Ensure path has key structural elements
-                    return path.matches("^[A-Z][a-z]+#\\d+@[a-z]+\\.[a-z]+$");
-                })
+                .map(this::generalizeIndividualPath)
                 .collect(Collectors.toList());
     }
 
-    private Map<Integer, String> initializeStateRegexMap(DFA dfa) {
-        Map<Integer, String> stateRegexMap = new HashMap<>();
-
-        for (int state = 0; state < dfa.getNumStates(); state++) {
-            stateRegexMap.put(state, "");
+    private String[] findCommonPatternParts(List<String> paths) {
+        if (paths.isEmpty()) {
+            return null;
         }
 
-        return stateRegexMap;
-    }
+        // Start with first path as reference
+        String firstPath = paths.get(0);
 
-    private Set<Integer> getStatesToEliminate(DFA dfa) {
-        Set<Integer> statesToEliminate = new HashSet<>();
+        // Check if all paths have similar structure
+        boolean allPathsMatch = paths.stream()
+                .allMatch(path -> path.length() == firstPath.length());
 
-        for (int state = 0; state < dfa.getNumStates(); state++) {
-            if (state != dfa.getStartState() && !dfa.isAcceptingState(state)) {
-                statesToEliminate.add(state);
+        if (!allPathsMatch) {
+            return null;
+        }
+
+        // Analyze each character position
+        String[] commonParts = new String[firstPath.length()];
+        for (int i = 0; i < firstPath.length(); i++) {
+            char firstChar = firstPath.charAt(i);
+            int finalI = i;
+            boolean sameCharAtPosition = paths.stream()
+                    .allMatch(path -> path.charAt(finalI) == firstChar);
+
+            if (sameCharAtPosition) {
+                commonParts[i] = String.valueOf(firstChar);
+            } else {
+                // Determine if we can generalize this position
+                commonParts[i] = generalizeCharPosition(paths, i);
             }
         }
 
-        return statesToEliminate;
+        return commonParts;
     }
 
-    private void eliminateState(DFA dfa, int state, Map<Integer, String> stateRegexMap) {
-        String selfLoopRegex = getSelfLoopRegex(dfa, state);
-        System.out.println("Initial DFA States: " + dfa.getStates());
-        System.out.println("Alphabet: " + dfa.getAlphabet());
-        System.out.println("Accepting States: " +
-                dfa.getStates().stream()
-                        .filter(dfa::isAcceptingState)
-                        .collect(Collectors.toSet())
-        );
+    private String generalizeCharPosition(List<String> paths, int position) {
+        // Analyze the characters at this position
+        Set<Character> uniqueChars = paths.stream()
+                .map(path -> path.charAt(position))
+                .collect(Collectors.toSet());
 
-        for (int fromState = 0; fromState < dfa.getNumStates(); fromState++) {
-            if (fromState == state) {
-                continue;
-            }
-
-            String transitionRegex = getTransitionRegex(dfa, fromState, state);
-
-            if (!transitionRegex.isEmpty()) {
-                for (int toState = 0; toState < dfa.getNumStates(); toState++) {
-                    if (toState == state) {
-                        continue;
-                    }
-
-                    String outgoingRegex = getTransitionRegex(dfa, state, toState);
-
-                    if (!outgoingRegex.isEmpty()) {
-                        String newRegex = transitionRegex + selfLoopRegex + outgoingRegex;
-                        updateStateRegexMap(stateRegexMap, fromState, toState, newRegex);
-                    }
-                }
-            }
+        // If it's a mix of letters, use a character class
+        if (uniqueChars.stream().allMatch(Character::isLetter)) {
+            return "[A-Za-z]";
         }
+
+        // If it's a mix of digits, use digit class
+        if (uniqueChars.stream().allMatch(Character::isDigit)) {
+            return "\\d";
+        }
+
+        // If it's a mix of special characters, use a more generic pattern
+        if (uniqueChars.stream().allMatch(c -> !Character.isLetterOrDigit(c))) {
+            return "\\W";
+        }
+
+        // Default to a more permissive pattern
+        return ".";
     }
 
-    private String getSelfLoopRegex(DFA dfa, int state) {
-        StringBuilder sb = new StringBuilder();
-
-        for (char symbol : dfa.getAlphabet()) {
-            if (dfa.getTransition(state, symbol) == state) {
-                sb.append(symbol);
-            }
-        }
-
-        String selfLoopSymbols = sb.toString();
-
-        if (selfLoopSymbols.isEmpty()) {
-            return "";
-        } else if (selfLoopSymbols.length() == 1) {
-            return selfLoopSymbols;
-        } else {
-            return "(" + selfLoopSymbols + ")*";
-        }
+    private String createGeneralizedRegex(String[] commonPatternParts) {
+        return String.join("", commonPatternParts);
     }
 
-    private String getTransitionRegex(DFA dfa, int fromState, int toState) {
-        StringBuilder sb = new StringBuilder();
-        boolean foundTransition = false;
-
-        for (char symbol : dfa.getAlphabet()) {
-            if (dfa.getTransition(fromState, symbol) == toState) {
-                sb.append(symbol);
-                foundTransition = true;
-            }
-        }
-
-        // If multiple transitions, wrap in character class or group
-        if (sb.length() > 1) {
-            return "[" + sb.toString() + "]";
-        }
-
-        return foundTransition ? sb.toString() : "";
-    }
-
-    private void updateStateRegexMap(Map<Integer, String> stateRegexMap, int fromState, int toState, String newRegex) {
-        String currentRegex = stateRegexMap.get(fromState);
-
-        // Preserve full sequences, avoid breaking into tiny fragments
-        if (currentRegex.isEmpty()) {
-            stateRegexMap.put(fromState, newRegex);
-        } else {
-            // Ensure meaningful alternation
-            stateRegexMap.put(fromState,
-                    newRegex.length() > currentRegex.length() ?
-                            newRegex :
-                            "(" + currentRegex + "|" + newRegex + ")"
-            );
-        }
+    private String generalizeIndividualPath(String path) {
+        // Add more sophisticated generalization logic here
+        // For now, we'll do some basic generalization
+        return path.replaceAll("\\d+", "\\\\d+")  // Replace consecutive digits with \d+
+                .replaceAll("[A-Za-z]+", "[A-Za-z]+");  // Replace consecutive letters
     }
 }

@@ -65,8 +65,8 @@ public class RegexSynthesiser {
 
             updateStatus("Simplifying regex...");
             String simplifiedRegex = RegexSimplifier.simplify(regex);
-
             System.out.println(simplifiedRegex);
+
             updateStatus("Validating regex...");
             boolean isValid = exampleValidator.validateExamples(simplifiedRegex, positiveExamples, negativeExamples);
 
