@@ -1,126 +1,78 @@
 package com.owenjg.regexsynthesiser.dfa;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DFA {
-    private  DFAState startState;
-    private Set<DFAState> states;
-    private  Set<DFATransition> transitions;
+    public static final int INVALID_STATE = -1;
 
-    public DFA() {
-        this.states = new HashSet<>();
-        this.transitions = new HashSet<>();
+    private int startState;
+    private Set<Integer> acceptingStates;
+    private Map<Integer, Map<Character, Integer>> transitions;
+
+    public DFA(int startState) {
+        this.startState = startState;
+        this.acceptingStates = new HashSet<>();
+        this.transitions = new HashMap<>();
     }
 
-    public DFA copy() {
-        DFA newDfa = new DFA();
-        Map<DFAState, DFAState> stateMap = new HashMap<>();
-
-        // Copy states and maintain mapping
-        for (DFAState oldState : states) {
-            DFAState newState = new DFAState(oldState.getId());
-            newState.setAccepting(oldState.isAccepting());
-            stateMap.put(oldState, newState);
-            newDfa.addState(newState);
-
-            // Set start state if this is the start state
-            if (oldState.equals(startState)) {
-                newDfa.setStartState(newState);
-            }
-        }
-
-        // Copy transitions using the state mapping
-        for (DFATransition oldTransition : transitions) {
-            DFAState newSource = stateMap.get(oldTransition.getSource());
-            DFAState newDest = stateMap.get(oldTransition.getDestination());
-            DFATransition newTransition = new DFATransition(newSource, newDest, oldTransition.getSymbol());
-            newDfa.addTransition(newTransition);
-        }
-
-        return newDfa;
+    public void addTransition(int fromState, char symbol, int toState) {
+        transitions.computeIfAbsent(fromState, k -> new HashMap<>()).put(symbol, toState);
     }
 
-
-
-    public boolean accepts(String input) {
-        if (startState == null) {
-            return false;
-        }
-
-        DFAState currentState = startState;
-
-        // Process each character in the input string
-        for (char symbol : input.toCharArray()) {
-            DFAState nextState = getNextState(currentState, symbol);
-
-            // If no valid transition exists, reject
-            if (nextState == null) {
-                return false;
-            }
-
-            currentState = nextState;
-        }
-
-        // Accept only if final state is accepting
-        return currentState.isAccepting();
+    public int getTransition(int state, char symbol) {
+        return transitions.getOrDefault(state, Collections.emptyMap()).getOrDefault(symbol, INVALID_STATE);
     }
 
-    // Helper methods that should be in your DFA class
-
-    public void removeState(DFAState state) {
-        states.remove(state);
-        transitions.removeIf(t ->
-                t.getSource().equals(state) || t.getDestination().equals(state));
+    public void addAcceptingState(int state) {
+        acceptingStates.add(state);
     }
 
-    public Set<DFATransition> getTransitionsTo(DFAState state) {
-        return transitions.stream()
-                .filter(t -> t.getDestination().equals(state))
-                .collect(Collectors.toSet());
+    public void removeAcceptingState(int state) {
+        acceptingStates.remove(state);
     }
 
-    public Set<DFATransition> getTransitionsFrom(DFAState state) {
-        return transitions.stream()
-                .filter(t -> t.getSource().equals(state))
-                .collect(Collectors.toSet());
+    public boolean isAcceptingState(int state) {
+        return acceptingStates.contains(state);
     }
 
-    private DFAState getNextState(DFAState currentState, char symbol) {
-        return transitions.stream()
-                .filter(t -> t.getSource().equals(currentState) &&
-                        t.getSymbol() == symbol)
-                .map(DFATransition::getDestination)
-                .findFirst()
-                .orElse(null);
-    }
-
-    // Getters and basic mutation methods
-
-    public void setStartState(DFAState state) {
-        this.startState = state;
-        this.states.add(state);
-    }
-
-    public DFAState getStartState() {
+    public int getStartState() {
         return startState;
     }
 
-    public void addState(DFAState state) {
-        states.add(state);
+    public int getNumStates() {
+        Set<Integer> states = new HashSet<>();
+        states.add(startState);
+        states.addAll(acceptingStates);
+        states.addAll(transitions.keySet());
+        for (Map<Character, Integer> transitionMap : transitions.values()) {
+            states.addAll(transitionMap.values());
+        }
+        return states.size();
     }
 
-    public void addTransition(DFATransition transition) {
-        this.transitions.add(transition);
-        this.states.add(transition.getSource());
-        this.states.add(transition.getDestination());
+    public Set<Character> getAlphabet() {
+        Set<Character> alphabet = new HashSet<>();
+        for (Map<Character, Integer> transitionMap : transitions.values()) {
+            alphabet.addAll(transitionMap.keySet());
+        }
+        return alphabet;
+    }
+    public void setStartState(int state) {
+        this.startState = state;
+    }
+    public Set<Integer> getStates() {
+        Set<Integer> states = new HashSet<>();
+        states.add(startState);
+        states.addAll(acceptingStates);
+        states.addAll(transitions.keySet());
+        for (Map<Character, Integer> transitionMap : transitions.values()) {
+            states.addAll(transitionMap.values());
+        }
+        return states;
     }
 
-    public Set<DFAState> getStates() {
-        return Collections.unmodifiableSet(states);
+    public Map<Integer, Map<Character, Integer>> getTransitions() {
+        return transitions;
     }
 
-    public Set<DFATransition> getTransitions() {
-        return new HashSet<>(transitions); // Return a copy instead of unmodifiable
-    }
 }

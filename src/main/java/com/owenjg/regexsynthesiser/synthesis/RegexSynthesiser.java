@@ -9,11 +9,10 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 public class RegexSynthesiser {
     private volatile boolean cancelRequested = false;
@@ -23,11 +22,13 @@ public class RegexSynthesiser {
     private final StateEliminationAlgorithm stateElimination;
     private final RegexSimplifier regexSimplifier;
     private final ExampleValidator exampleValidator;
+    private final PatternGeneralizer patternGeneralizer;
     @FXML
     private Label currentStatusLabel;
 
 
-    public RegexSynthesiser(Label statusLabel) {  // Modified constructor
+    public RegexSynthesiser(Label statusLabel) {
+        this.patternGeneralizer = new PatternGeneralizer();// Modified constructor
         this.prefixTreeBuilder = new PrefixTreeBuilder();
         this.dfaMinimiser = new DFAMinimiser();
         this.stateElimination = new StateEliminationAlgorithm();
@@ -48,27 +49,38 @@ public class RegexSynthesiser {
 
     public void synthesise(List<String> positiveExamples, List<String> negativeExamples) {
         try {
-            System.out.println("Positive examples: " + positiveExamples);
+            validateInputExamples(positiveExamples, negativeExamples);
 
             updateStatus("Building prefix tree...");
-            DFA prefixTree = prefixTreeBuilder.buildPrefixTree(positiveExamples);
-            System.out.println("Prefix tree states: " + prefixTree.getStates().size());
-            System.out.println("Prefix tree transitions: " + prefixTree.getTransitions().size());
+            DFA pta = prefixTreeBuilder.buildPrefixTree(positiveExamples);
 
-            updateStatus("Minimizing automaton...");
-            DFA minimizedDfa = dfaMinimiser.minimise(prefixTree, negativeExamples);
-            System.out.println("Minimized DFA states: " + minimizedDfa.getStates().size());
-            System.out.println("Minimized DFA transitions: " + minimizedDfa.getTransitions().size());
+            updateStatus("Minimizing DFA...");
+            DFA minimizedDFA = dfaMinimiser.minimizeDFA(pta);
 
-            updateStatus("Converting to regex...");
-            String regex = stateElimination.convertToRegex(minimizedDfa);
-            System.out.println("Raw regex: " + regex);
+            updateStatus("Refining DFA with negative examples...");
+            DFA refinedDFA = refineWithNegativeExamples(minimizedDFA, negativeExamples);
 
-            String simplifiedRegex = regexSimplifier.simplify(regex);
-            System.out.println("Simplified regex: " + simplifiedRegex);
+            updateStatus("Extracting regex from DFA...");
+            String regex = stateElimination.eliminateStates(refinedDFA);
 
-            if (progressCallback != null) {
-                progressCallback.onComplete(simplifiedRegex);
+            updateStatus("Simplifying regex...");
+            String simplifiedRegex = RegexSimplifier.simplify(regex);
+
+            System.out.println(simplifiedRegex);
+            updateStatus("Validating regex...");
+            boolean isValid = exampleValidator.validateExamples(simplifiedRegex, positiveExamples, negativeExamples);
+
+            if (isValid) {
+                if (progressCallback != null) {
+                    progressCallback.onComplete(simplifiedRegex);
+                }
+            } else {
+                updateStatus("Trying alternative patterns...");
+                String alternativeRegex = tryAlternativePatterns(positiveExamples, negativeExamples);
+                alternativeRegex = RegexSimplifier.simplify((alternativeRegex));
+                if (progressCallback != null) {
+                    progressCallback.onComplete(alternativeRegex);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -76,37 +88,74 @@ public class RegexSynthesiser {
         }
     }
 
-    // Add this helper method to safely update the status label
-    private void updateStatus(String status) {
-        if (currentStatusLabel != null) {
-            Platform.runLater(() -> currentStatusLabel.setText(status));
+    private DFA refineWithNegativeExamples(DFA dfa, List<String> negativeExamples) {
+        for (String example : negativeExamples) {
+            int currentState = dfa.getStartState();
+            for (char c : example.toCharArray()) {
+                currentState = dfa.getTransition(currentState, c);
+                if (currentState == DFA.INVALID_STATE) {
+                    break;
+                }
+            }
+            if (dfa.isAcceptingState(currentState)) {
+                dfa.removeAcceptingState(currentState);
+            }
+        }
+        return dfa;
+    }
+
+    private boolean validatePattern(String regex, List<String> positiveExamples, List<String> negativeExamples) {
+        try {
+            Pattern pattern = Pattern.compile(regex);
+
+            // Check all positive examples match
+            boolean allPositiveMatch = positiveExamples.stream()
+                    .allMatch(ex -> pattern.matcher(ex).matches());
+
+            // Check no negative examples match
+            boolean noNegativeMatch = negativeExamples == null || negativeExamples.isEmpty() ||
+                    negativeExamples.stream()
+                            .noneMatch(ex -> pattern.matcher(ex).matches());
+
+            return allPositiveMatch && noNegativeMatch;
+        } catch (Exception e) {
+            return false;
         }
     }
 
+    private String tryAlternativePatterns(List<String> positiveExamples, List<String> negativeExamples) {
+        // Try splitting into subgroups if the examples have different patterns
+        List<List<String>> subgroups = findSimilarExamples(positiveExamples);
 
-    private boolean checkCancellationAndUpdateProgress(long startTime, String message) {
-        try {
-            // Add a small delay to make progress visible
-            Thread.sleep(500);
-
-            if (cancelRequested) {
-                if (progressCallback != null) {
-                    progressCallback.onCancel();
-                }
-                return true;
-            }
-
-            if (progressCallback != null) {
-                long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
-                progressCallback.onProgress(elapsedTime, message);
-            }
-            return false;
-        } catch (InterruptedException e) {
-            if (progressCallback != null) {
-                progressCallback.onCancel();
-            }
-            return true;
+        if (subgroups.size() > 1) {
+            // Generate pattern for each subgroup and combine with OR
+            List<String> patterns = subgroups.stream()
+                    .map(group -> patternGeneralizer.generalizePattern(group))
+                    .collect(Collectors.toList());
+            return "(" + String.join("|", patterns) + ")";
         }
+
+        // If no subgroups work, fall back to exact matching only as last resort
+        return createExactMatchPattern(positiveExamples);
+    }
+
+    private List<List<String>> findSimilarExamples(List<String> examples) {
+        Map<Integer, List<String>> lengthGroups = examples.stream()
+                .collect(Collectors.groupingBy(String::length));
+
+        // If we have different lengths, group by length
+        if (lengthGroups.size() > 1) {
+            return new ArrayList<>(lengthGroups.values());
+        }
+
+        // If same length, try to group by pattern similarity
+        return Collections.singletonList(examples);
+    }
+
+    private String createExactMatchPattern(List<String> examples) {
+        return examples.stream()
+                .map(Pattern::quote)
+                .collect(Collectors.joining("|"));
     }
 
     private void validateInputExamples(List<String> positiveExamples, List<String> negativeExamples)
@@ -114,55 +163,12 @@ public class RegexSynthesiser {
         if (positiveExamples == null || positiveExamples.isEmpty()) {
             throw new RegexSynthesisException("At least one positive example is required");
         }
-
-        for (String example : positiveExamples) {
-            if (example == null || example.isEmpty()) {
-                throw new RegexSynthesisException("Positive examples cannot be null or empty");
-            }
-        }
-
-        if (negativeExamples != null) {
-            for (String example : negativeExamples) {
-                if (example == null) {
-                    throw new RegexSynthesisException("Negative examples cannot be null");
-                }
-            }
-
-            // Check for overlap between positive and negative examples
-            Set<String> positiveSet = new HashSet<>(positiveExamples);
-            Set<String> negativeSet = new HashSet<>(negativeExamples);
-            Set<String> intersection = new HashSet<>(positiveSet);
-            intersection.retainAll(negativeSet);
-
-            if (!intersection.isEmpty()) {
-                throw new RegexSynthesisException(
-                        "Found overlapping examples in positive and negative sets: " + intersection);
-            }
-        }
     }
 
-    private void validateResult(String regex, List<String> positiveExamples,
-                                List<String> negativeExamples) throws RegexSynthesisException {
-        try {
-            Pattern pattern = Pattern.compile(regex);
-
-            for (String example : positiveExamples) {
-                if (!pattern.matcher(example).matches()) {
-                    throw new RegexSynthesisException(
-                            "Generated regex fails to match positive example: " + example);
-                }
-            }
-
-            if (negativeExamples != null) {
-                for (String example : negativeExamples) {
-                    if (pattern.matcher(example).matches()) {
-                        throw new RegexSynthesisException(
-                                "Generated regex incorrectly matches negative example: " + example);
-                    }
-                }
-            }
-        } catch (PatternSyntaxException e) {
-            throw new RegexSynthesisException("Generated invalid regex pattern: " + e.getMessage());
+    private void updateStatus(String status) {
+        System.out.println(status);
+        if (currentStatusLabel != null) {
+            Platform.runLater(() -> currentStatusLabel.setText(status));
         }
     }
 
@@ -172,12 +178,10 @@ public class RegexSynthesiser {
         }
     }
 
-    // Method to set progress callback
     public void setProgressCallback(ProgressCallback callback) {
         this.progressCallback = callback;
     }
 
-    // Method to cancel the generation
     public void cancelGeneration() {
         cancelRequested = true;
     }

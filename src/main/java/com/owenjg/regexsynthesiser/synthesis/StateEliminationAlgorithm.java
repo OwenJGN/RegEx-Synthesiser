@@ -1,198 +1,200 @@
+// StateEliminationAlgorithm.java
 package com.owenjg.regexsynthesiser.synthesis;
 
 import com.owenjg.regexsynthesiser.dfa.DFA;
-import com.owenjg.regexsynthesiser.dfa.DFAState;
-import com.owenjg.regexsynthesiser.dfa.DFATransition;
-import javafx.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class StateEliminationAlgorithm {
-    private Map<DFATransition, String> regexLabels = new HashMap<>();
 
-    public String convertToRegex(DFA dfa) {
-        System.out.println("\nStarting state elimination...");
-        System.out.println("Initial states: " + dfa.getStates().size());
-        System.out.println("Initial transitions: " + dfa.getTransitions().size());
+    public String eliminateStates(DFA dfa) {
+        // Collect full paths to accepting states
+        List<String> fullPaths = new ArrayList<>();
 
-        DFA workingDfa = dfa.copy();
-        initializeRegexLabels(workingDfa);
+        // Comprehensive path tracing
+        traceFullPaths(dfa, dfa.getStartState(), "", fullPaths);
 
-        while (workingDfa.getStates().size() > 2) {
-            DFAState stateToEliminate = chooseStateForElimination(workingDfa);
-            if (stateToEliminate == null) {
-                System.out.println("No more states to eliminate");
-                break;
+        // Debug: print extracted paths
+        System.out.println("Extracted Paths: " + fullPaths);
+
+        // If no paths found, return empty string
+        if (fullPaths.isEmpty()) {
+            return "";
+        }
+
+        // Remove duplicates while preserving order
+        List<String> uniquePaths = new ArrayList<>(new LinkedHashSet<>(fullPaths));
+
+        // If only one unique path, return it
+        if (uniquePaths.size() == 1) {
+            return uniquePaths.get(0);
+        }
+
+        // Create alternation of paths
+        return "(" + String.join("|", uniquePaths) + ")";
+    }
+
+    private void traceFullPaths(DFA dfa, int currentState, String currentPath,
+                                List<String> fullPaths) {
+        // If this is an accepting state, add the current path
+        if (dfa.isAcceptingState(currentState)) {
+            fullPaths.add(currentPath);
+            return;
+        }
+
+        // Track to prevent infinite recursion
+        Set<Integer> visitedStates = new HashSet<>();
+        tracePaths(dfa, currentState, currentPath, fullPaths, visitedStates);
+    }
+
+    private void tracePaths(DFA dfa, int currentState, String currentPath,
+                            List<String> fullPaths, Set<Integer> visitedStates) {
+        // Prevent infinite loops
+        if (visitedStates.contains(currentState)) {
+            return;
+        }
+        visitedStates.add(currentState);
+
+        // Explore all possible transitions
+        for (char symbol : dfa.getAlphabet()) {
+            int nextState = dfa.getTransition(currentState, symbol);
+            if (nextState != DFA.INVALID_STATE) {
+                // Create a new set of visited states for each branch
+                Set<Integer> newVisitedStates = new HashSet<>(visitedStates);
+
+                String newPath = currentPath + symbol;
+
+                // If next state is an accepting state, add the path
+                if (dfa.isAcceptingState(nextState)) {
+                    fullPaths.add(newPath);
+                }
+
+                // Continue tracing
+                tracePaths(dfa, nextState, newPath, fullPaths, newVisitedStates);
+            }
+        }
+    }
+
+
+    private List<String> cleanAndFilterPaths(List<String> paths) {
+        // Filter and clean paths to capture the structural pattern
+        return paths.stream()
+                .filter(path -> {
+                    // Ensure path has key structural elements
+                    return path.matches("^[A-Z][a-z]+#\\d+@[a-z]+\\.[a-z]+$");
+                })
+                .collect(Collectors.toList());
+    }
+
+    private Map<Integer, String> initializeStateRegexMap(DFA dfa) {
+        Map<Integer, String> stateRegexMap = new HashMap<>();
+
+        for (int state = 0; state < dfa.getNumStates(); state++) {
+            stateRegexMap.put(state, "");
+        }
+
+        return stateRegexMap;
+    }
+
+    private Set<Integer> getStatesToEliminate(DFA dfa) {
+        Set<Integer> statesToEliminate = new HashSet<>();
+
+        for (int state = 0; state < dfa.getNumStates(); state++) {
+            if (state != dfa.getStartState() && !dfa.isAcceptingState(state)) {
+                statesToEliminate.add(state);
+            }
+        }
+
+        return statesToEliminate;
+    }
+
+    private void eliminateState(DFA dfa, int state, Map<Integer, String> stateRegexMap) {
+        String selfLoopRegex = getSelfLoopRegex(dfa, state);
+        System.out.println("Initial DFA States: " + dfa.getStates());
+        System.out.println("Alphabet: " + dfa.getAlphabet());
+        System.out.println("Accepting States: " +
+                dfa.getStates().stream()
+                        .filter(dfa::isAcceptingState)
+                        .collect(Collectors.toSet())
+        );
+
+        for (int fromState = 0; fromState < dfa.getNumStates(); fromState++) {
+            if (fromState == state) {
+                continue;
             }
 
-            System.out.println("Eliminating state: " + stateToEliminate.getId());
-            eliminateState(workingDfa, stateToEliminate);
-            System.out.println("Remaining states: " + workingDfa.getStates().size());
-            System.out.println("Remaining transitions: " + workingDfa.getTransitions().size());
-        }
+            String transitionRegex = getTransitionRegex(dfa, fromState, state);
 
-        String regex = extractFinalRegex(workingDfa);
-        System.out.println("Final regex: " + regex);
-        return regex;
-    }
+            if (!transitionRegex.isEmpty()) {
+                for (int toState = 0; toState < dfa.getNumStates(); toState++) {
+                    if (toState == state) {
+                        continue;
+                    }
 
-    private void initializeRegexLabels(DFA dfa) {
-        regexLabels.clear();
-        for (DFATransition transition : dfa.getTransitions()) {
-            regexLabels.put(transition, String.valueOf(transition.getSymbol()));
-        }
-    }
+                    String outgoingRegex = getTransitionRegex(dfa, state, toState);
 
-    // In StateEliminationAlgorithm.java
-    private DFAState chooseStateForElimination(DFA dfa) {
-        DFAState startState = dfa.getStartState();
-        DFAState bestState = null;
-        int minTransitions = Integer.MAX_VALUE;
-
-        // First, identify accepting states
-        Set<DFAState> acceptingStates = dfa.getStates().stream()
-                .filter(DFAState::isAccepting)
-                .collect(Collectors.toSet());
-
-        // Don't eliminate if we only have start and accepting states left
-        if (dfa.getStates().size() <= acceptingStates.size() + 1) {
-            return null;
-        }
-
-        for (DFAState state : dfa.getStates()) {
-            // Skip start state and accepting states
-            if (!state.equals(startState) && !state.isAccepting()) {
-                int inCount = dfa.getTransitionsTo(state).size();
-                int outCount = dfa.getTransitionsFrom(state).size();
-
-                // Skip states with no incoming or outgoing transitions
-                if (inCount == 0 || outCount == 0) continue;
-
-                int totalTransitions = inCount * outCount;
-                if (totalTransitions < minTransitions) {
-                    minTransitions = totalTransitions;
-                    bestState = state;
+                    if (!outgoingRegex.isEmpty()) {
+                        String newRegex = transitionRegex + selfLoopRegex + outgoingRegex;
+                        updateStateRegexMap(stateRegexMap, fromState, toState, newRegex);
+                    }
                 }
             }
         }
-        return bestState;
     }
 
-    private String extractFinalRegex(DFA dfa) {
-        DFAState startState = dfa.getStartState();
-        Set<String> patterns = new HashSet<>(); // Use Set to avoid duplicates
+    private String getSelfLoopRegex(DFA dfa, int state) {
+        StringBuilder sb = new StringBuilder();
 
-        // Handle paths from start to accepting states
-        for (DFATransition transition : dfa.getTransitions()) {
-            if (transition.getSource().equals(startState)) {
-                String pattern = regexLabels.get(transition);
-                if (pattern != null && !pattern.isEmpty() &&
-                        transition.getDestination().isAccepting()) {
-                    patterns.add(pattern);
-                }
+        for (char symbol : dfa.getAlphabet()) {
+            if (dfa.getTransition(state, symbol) == state) {
+                sb.append(symbol);
             }
         }
 
-        if (patterns.isEmpty()) {
-            return startState.isAccepting() ? "ϵ" : "";
-        }
+        String selfLoopSymbols = sb.toString();
 
-        List<String> sortedPatterns = new ArrayList<>(patterns);
-        Collections.sort(sortedPatterns); // Sort for consistent output
-        return sortedPatterns.size() == 1 ? sortedPatterns.get(0) :
-                "(" + String.join("|", sortedPatterns) + ")";
+        if (selfLoopSymbols.isEmpty()) {
+            return "";
+        } else if (selfLoopSymbols.length() == 1) {
+            return selfLoopSymbols;
+        } else {
+            return "(" + selfLoopSymbols + ")*";
+        }
     }
 
-    private void eliminateState(DFA dfa, DFAState state) {
-        Set<DFATransition> incomingTransitions = dfa.getTransitionsTo(state);
-        Set<DFATransition> outgoingTransitions = dfa.getTransitionsFrom(state);
-        Map<Pair<DFAState, DFAState>, String> newTransitions = new HashMap<>();
+    private String getTransitionRegex(DFA dfa, int fromState, int toState) {
+        StringBuilder sb = new StringBuilder();
+        boolean foundTransition = false;
 
-        // Handle self-loops
-        String selfLoopRegex = getSelfLoopRegex(state, outgoingTransitions);
-        String selfLoopPart = !selfLoopRegex.isEmpty() ? "(" + selfLoopRegex + ")*" : "";
-
-        // Create new transitions
-        for (DFATransition inTrans : incomingTransitions) {
-            if (inTrans.getSource().equals(state)) continue;
-
-            for (DFATransition outTrans : outgoingTransitions) {
-                if (outTrans.getDestination().equals(state)) continue;
-
-                String newRegex = concatenateRegex(
-                        regexLabels.get(inTrans),
-                        selfLoopPart,
-                        regexLabels.get(outTrans)
-                );
-
-                Pair<DFAState, DFAState> statePair = new Pair<>(
-                        inTrans.getSource(), outTrans.getDestination());
-
-                String existingRegex = newTransitions.get(statePair);
-                if (existingRegex != null) {
-                    newRegex = "(" + existingRegex + "|" + newRegex + ")";
-                }
-                newTransitions.put(statePair, newRegex);
+        for (char symbol : dfa.getAlphabet()) {
+            if (dfa.getTransition(fromState, symbol) == toState) {
+                sb.append(symbol);
+                foundTransition = true;
             }
         }
 
-        // Remove old state and transitions
-        dfa.removeState(state);
-
-        // Add new transitions
-        for (Map.Entry<Pair<DFAState, DFAState>, String> entry : newTransitions.entrySet()) {
-            DFATransition newTrans = new DFATransition(
-                    entry.getKey().first, entry.getKey().second, 'ε');
-            dfa.addTransition(newTrans);
-            regexLabels.put(newTrans, entry.getValue());
-        }
-    }
-
-    private String concatenateRegex(String... parts) {
-        StringBuilder result = new StringBuilder();
-        for (String part : parts) {
-            if (part != null && !part.isEmpty()) {
-                if (result.length() > 0 && !isOperator(part.charAt(0))) {
-                    result.append("");  // No explicit concatenation operator needed
-                }
-                result.append(part);
-            }
-        }
-        return result.toString();
-    }
-
-    private boolean isOperator(char c) {
-        return c == '*' || c == '+' || c == '?' || c == '|' || c == ')';
-    }
-
-    private String getSelfLoopRegex(DFAState state, Set<DFATransition> outgoing) {
-        return outgoing.stream()
-                .filter(t -> t.getDestination().equals(state))
-                .map(t -> regexLabels.get(t))
-                .collect(Collectors.joining("|"));
-    }
-
-    private static class Pair<T, U> {
-        final T first;
-        final U second;
-
-        Pair(T first, U second) {
-            this.first = first;
-            this.second = second;
+        // If multiple transitions, wrap in character class or group
+        if (sb.length() > 1) {
+            return "[" + sb.toString() + "]";
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof Pair)) return false;
-            Pair<?, ?> p = (Pair<?, ?>) o;
-            return Objects.equals(first, p.first) && Objects.equals(second, p.second);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(first, second);
-        }
+        return foundTransition ? sb.toString() : "";
     }
 
+    private void updateStateRegexMap(Map<Integer, String> stateRegexMap, int fromState, int toState, String newRegex) {
+        String currentRegex = stateRegexMap.get(fromState);
+
+        // Preserve full sequences, avoid breaking into tiny fragments
+        if (currentRegex.isEmpty()) {
+            stateRegexMap.put(fromState, newRegex);
+        } else {
+            // Ensure meaningful alternation
+            stateRegexMap.put(fromState,
+                    newRegex.length() > currentRegex.length() ?
+                            newRegex :
+                            "(" + currentRegex + "|" + newRegex + ")"
+            );
+        }
+    }
 }

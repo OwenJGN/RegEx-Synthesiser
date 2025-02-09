@@ -1,76 +1,112 @@
 package com.owenjg.regexsynthesiser.simplification;
 
-import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
 
 public class RegexSimplifier {
-    //TODO Use more symbols that just () and |
-    private RegexPostProcessor postProcessor;
 
-    public RegexSimplifier() {
-        this.postProcessor = new RegexPostProcessor();
+
+
+    public static String simplify(String regex) {
+        // First, normalize the regex by removing whitespace
+        String normalized = regex.trim();
+
+        // Extract patterns, handling both parenthesized and non-parenthesized input
+        List<String> patterns;
+        if (normalized.startsWith("(") && normalized.endsWith(")") && isMatchingParentheses(normalized)) {
+            // Remove outer parentheses first if they're matching
+            patterns = extractTopLevelAlternations(normalized.substring(1, normalized.length() - 1));
+        } else {
+            patterns = extractTopLevelAlternations(normalized);
+        }
+
+        // If all patterns are identical, return just one instance
+        if (arePatternsSame(patterns)) {
+            return patterns.get(0);
+        }
+
+        // Remove duplicates while preserving order
+        List<String> uniquePatterns = new ArrayList<>(new LinkedHashSet<>(patterns));
+
+        // If we only have one pattern after removing duplicates, return it
+        if (uniquePatterns.size() == 1) {
+            return uniquePatterns.get(0);
+        }
+
+        // Join patterns with alternation
+        String result = String.join("|", uniquePatterns);
+        return result.contains("|") ? "(" + result + ")" : result;
     }
 
-    public String simplify(String regex) {
-        String simplified = regex;
-
-        // Combine alternations with common prefixes
-        simplified = simplified.replaceAll("([^|()]+)\\|\\1([^|()]+)", "$1$2");
-
-        // Remove duplicate alternations
-        simplified = simplified.replaceAll("\\((.*?)\\)\\|\\1", "($1)");
-
-        // Combine or-patterns with common elements
-        simplified = simplified.replaceAll("\\(([^|()]+)\\|([^|()]+)\\)\\|\\(\\1\\|([^|()]+)\\)", "($1|$2|$3)");
-
-        // Optimize alternations with common parts
-        simplified = optimizeAlternations(simplified);
-
-        return simplified;
-    }
-
-    private String optimizeAlternations(String regex) {
-        // Find common prefixes in alternations
-        String pattern = "\\((.*?)\\|.*?\\)";
-        Pattern p = Pattern.compile(pattern);
-        Matcher m = p.matcher(regex);
-
-        StringBuffer result = new StringBuffer();
-        while (m.find()) {
-            String group = m.group();
-            String[] parts = group.substring(1, group.length()-1).split("\\|");
-
-            String commonPrefix = findCommonPrefix(parts);
-            if (!commonPrefix.isEmpty()) {
-                String simplified = commonPrefix + "(" +
-                        String.join("|", Arrays.stream(parts)
-                                .map(s -> s.substring(commonPrefix.length()))
-                                .filter(s -> !s.isEmpty())
-                                .toArray(String[]::new)) + ")";
-                m.appendReplacement(result, simplified);
+    private static boolean isMatchingParentheses(String regex) {
+        int count = 0;
+        for (int i = 0; i < regex.length(); i++) {
+            char c = regex.charAt(i);
+            if (!isEscaped(regex, i)) {
+                if (c == '(') count++;
+                if (c == ')') count--;
+                if (count < 0) return false;
             }
         }
-        m.appendTail(result);
-
-        return result.toString();
+        return count == 0;
     }
 
-    private String findCommonPrefix(String[] strings) {
-        if (strings.length == 0) return "";
-        String first = strings[0];
-        int prefixLen = first.length();
+    private static List<String> extractTopLevelAlternations(String regex) {
+        List<String> patterns = new ArrayList<>();
+        StringBuilder currentPattern = new StringBuilder();
+        int parenthesesCount = 0;
+        boolean inCharacterClass = false;
 
-        for (int i = 1; i < strings.length; i++) {
-            prefixLen = Math.min(prefixLen, strings[i].length());
-            for (int j = 0; j < prefixLen; j++) {
-                if (first.charAt(j) != strings[i].charAt(j)) {
-                    prefixLen = j;
-                    break;
+        for (int i = 0; i < regex.length(); i++) {
+            char c = regex.charAt(i);
+
+            // Handle character class brackets
+            if (c == '[' && !isEscaped(regex, i)) {
+                inCharacterClass = true;
+            } else if (c == ']' && !isEscaped(regex, i)) {
+                inCharacterClass = false;
+            }
+
+            // Only count unescaped parentheses outside character classes
+            if (!inCharacterClass) {
+                if (c == '(' && !isEscaped(regex, i)) {
+                    parenthesesCount++;
+                } else if (c == ')' && !isEscaped(regex, i)) {
+                    parenthesesCount--;
                 }
             }
+
+            // Split on unescaped pipe symbols at top level
+            if (c == '|' && parenthesesCount == 0 && !inCharacterClass && !isEscaped(regex, i)) {
+                patterns.add(currentPattern.toString());
+                currentPattern = new StringBuilder();
+            } else {
+                currentPattern.append(c);
+            }
         }
 
-        return first.substring(0, prefixLen);
+        if (currentPattern.length() > 0) {
+            patterns.add(currentPattern.toString());
+        }
+
+        return patterns;
     }
+
+    private static boolean isEscaped(String regex, int index) {
+        if (index <= 0) return false;
+
+        int count = 0;
+        int i = index - 1;
+        while (i >= 0 && regex.charAt(i) == '\\') {
+            count++;
+            i--;
+        }
+        return count % 2 == 1;
+    }
+
+    private static boolean arePatternsSame(List<String> patterns) {
+        if (patterns.isEmpty()) return true;
+        String first = patterns.get(0);
+        return patterns.stream().allMatch(p -> p.equals(first));
+    }
+
 }

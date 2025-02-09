@@ -1,201 +1,120 @@
+// DFAMinimiser.java
 package com.owenjg.regexsynthesiser.minimisation;
 
 import com.owenjg.regexsynthesiser.dfa.DFA;
-import com.owenjg.regexsynthesiser.dfa.DFAState;
-import com.owenjg.regexsynthesiser.dfa.DFATransition;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DFAMinimiser {
-    private UnionFind unionFind;
-    private ComplexityPenaltyCalculator penaltyCalculator;
+    public DFA minimizeDFA(DFA dfa) {
+        Map<Integer, Set<Integer>> partitions = initializePartitions(dfa);
+        boolean changed = true;
 
-    public DFAMinimiser() {
-        this.unionFind = new UnionFind();
-        this.penaltyCalculator = new ComplexityPenaltyCalculator();
-    }
-
-    public DFA minimise(DFA dfa, List<String> negativeExamples) {
-        DFA currentDfa = dfa.copy();
-        boolean changed;
-
-        do {
+        while (changed) {
             changed = false;
-            List<StatePair> pairs = findMergeablePairs(currentDfa);
+            Map<Integer, Set<Integer>> newPartitions = new HashMap<>();
 
-            for (StatePair pair : pairs) {
-                DFA mergedDfa = simulateMerge(currentDfa, pair.state1, pair.state2);
-
-                if (mergedDfa != null && isValidMerge(mergedDfa, negativeExamples)) {
-                    currentDfa = mergedDfa;
+            for (Set<Integer> partition : partitions.values()) {
+                Map<Integer, Set<Integer>> splitPartitions = splitPartition(dfa, partition);
+                if (splitPartitions.size() > 1) {
                     changed = true;
-                    break;
+                    newPartitions.putAll(splitPartitions);
+                } else {
+                    newPartitions.put(partition.iterator().next(), partition);
                 }
             }
-        } while (changed);
 
-        return currentDfa;
+            partitions = newPartitions;
+        }
+
+        return buildMinimizedDFA(dfa, partitions);
     }
 
-    private DFA simulateMerge(DFA original, DFAState state1, DFAState state2) {
-        System.out.println("Attempting to merge states: " + state1.getId() + " and " + state2.getId());
+    private Map<Integer, Set<Integer>> initializePartitions(DFA dfa) {
+        Map<Integer, Set<Integer>> partitions = new HashMap<>();
+        Set<Integer> acceptingStates = new HashSet<>();
+        Set<Integer> nonAcceptingStates = new HashSet<>();
 
-        DFA mergedDfa = new DFA();
-        Map<DFAState, DFAState> stateMap = new HashMap<>();
-
-        // Create merged state
-        DFAState mergedState = new DFAState(Math.min(state1.getId(), state2.getId()));
-        mergedState.setAccepting(state1.isAccepting() || state2.isAccepting());
-        stateMap.put(state1, mergedState);
-        stateMap.put(state2, mergedState);
-        mergedDfa.addState(mergedState);
-
-        // Copy other states
-        for (DFAState oldState : original.getStates()) {
-            if (!oldState.equals(state1) && !oldState.equals(state2)) {
-                DFAState newState = new DFAState(oldState.getId());
-                newState.setAccepting(oldState.isAccepting());
-                stateMap.put(oldState, newState);
-                mergedDfa.addState(newState);
+        for (int state = 0; state < dfa.getNumStates(); state++) {
+            if (dfa.isAcceptingState(state)) {
+                acceptingStates.add(state);
+            } else {
+                nonAcceptingStates.add(state);
             }
         }
 
-        // Set start state
-        DFAState oldStart = original.getStartState();
-        DFAState newStart = stateMap.get(oldStart);
-        if (newStart != null) {
-            mergedDfa.setStartState(newStart);
-            System.out.println("Set start state: " + newStart.getId());
+        partitions.put(0, acceptingStates);
+        partitions.put(1, nonAcceptingStates);
+
+        return partitions;
+    }
+
+    private Map<Integer, Set<Integer>> splitPartition(DFA dfa, Set<Integer> partition) {
+        Map<Integer, Set<Integer>> splitPartitions = new HashMap<>();
+
+        for (int state : partition) {
+            String transitionKey = getTransitionKey(dfa, state, partition);
+            splitPartitions.computeIfAbsent(transitionKey.hashCode(), k -> new HashSet<>()).add(state);
         }
 
-        // Copy transitions
-        System.out.println("Original transitions:");
-        for (DFATransition t : original.getTransitions()) {
-            System.out.println(t.getSource().getId() + " --" + t.getSymbol() + "--> " + t.getDestination().getId());
+        return splitPartitions;
+    }
+
+    private String getTransitionKey(DFA dfa, int state, Set<Integer> partition) {
+        StringBuilder sb = new StringBuilder();
+
+        for (char symbol : dfa.getAlphabet()) {
+            int nextState = dfa.getTransition(state, symbol);
+            sb.append(partition.contains(nextState) ? "1" : "0");
         }
 
-        for (DFATransition oldTrans : original.getTransitions()) {
-            DFAState newSource = stateMap.get(oldTrans.getSource());
-            DFAState newDest = stateMap.get(oldTrans.getDestination());
+        return sb.toString();
+    }
 
-            if (newSource != null && newDest != null) {
-                DFATransition newTrans = new DFATransition(newSource, newDest, oldTrans.getSymbol());
-                mergedDfa.addTransition(newTrans);
-                System.out.println("Added transition: " + newSource.getId() + " --" + newTrans.getSymbol() + "--> " + newDest.getId());
+    private DFA buildMinimizedDFA(DFA dfa, Map<Integer, Set<Integer>> partitions) {
+        DFA minimizedDFA = new DFA(0);
+        Map<Set<Integer>, Integer> stateMapping = new HashMap<>();
+        int stateCounter = 0;
+
+        for (Set<Integer> partition : partitions.values()) {
+            int representativeState = partition.iterator().next();
+            stateMapping.put(partition, stateCounter);
+
+            if (partition.contains(dfa.getStartState())) {
+                minimizedDFA.setStartState(stateCounter);
             }
-        }
 
-        return mergedDfa;
-    }
-
-
-    // Add this for debugging
-    private boolean isValidMerge(DFA mergedDfa, List<String> negativeExamples) {
-        System.out.println("Validating merge - States: " + mergedDfa.getStates().size() +
-                " Transitions: " + mergedDfa.getTransitions().size());
-
-        if (negativeExamples == null || negativeExamples.isEmpty()) {
-            return true;
-        }
-
-        for (String example : negativeExamples) {
-            if (mergedDfa.accepts(example)) {
-                return false;
+            if (dfa.isAcceptingState(representativeState)) {
+                minimizedDFA.addAcceptingState(stateCounter);
             }
+
+            stateCounter++;
         }
-        return true;
-    }
 
-    private boolean hasEquivalentTransition(DFA dfa, DFATransition transition) {
-        return dfa.getTransitions().stream().anyMatch(t ->
-                t.getSource().equals(transition.getSource()) &&
-                        t.getDestination().equals(transition.getDestination()) &&
-                        t.getSymbol() == transition.getSymbol()
-        );
-    }
+        for (Set<Integer> partition : partitions.values()) {
+            int representativeState = partition.iterator().next();
+            int fromState = stateMapping.get(partition);
 
-    private List<StatePair> findMergeablePairs(DFA dfa) {
-        List<StatePair> pairs = new ArrayList<>();
-        List<DFAState> states = new ArrayList<>(dfa.getStates());
+            for (char symbol : dfa.getAlphabet()) {
+                int nextState = dfa.getTransition(representativeState, symbol);
+                Set<Integer> nextPartition = findPartition(partitions, nextState);
 
-        for (int i = 0; i < states.size(); i++) {
-            for (int j = i + 1; j < states.size(); j++) {
-                DFAState state1 = states.get(i);
-                DFAState state2 = states.get(j);
-
-                // Only add pairs that have potential for merging
-                if (canPotentiallyMerge(state1, state2, dfa)) {
-                    pairs.add(new StatePair(state1, state2));
+                if (nextPartition != null) {
+                    int toState = stateMapping.get(nextPartition);
+                    minimizedDFA.addTransition(fromState, symbol, toState);
                 }
             }
         }
 
-        return pairs;
+        return minimizedDFA;
     }
 
-    private boolean canPotentiallyMerge(DFAState state1, DFAState state2, DFA dfa) {
-        // States with different accepting status cannot be merged
-        if (state1.isAccepting() != state2.isAccepting()) {
-            return false;
+    private Set<Integer> findPartition(Map<Integer, Set<Integer>> partitions, int state) {
+        for (Set<Integer> partition : partitions.values()) {
+            if (partition.contains(state)) {
+                return partition;
+            }
         }
-
-        // Don't merge if one is start state and other isn't
-        boolean isStart1 = state1.equals(dfa.getStartState());
-        boolean isStart2 = state2.equals(dfa.getStartState());
-        if (isStart1 != isStart2) {
-            return false;
-        }
-
-        // Check for compatible transitions
-        Set<Character> symbols1 = getTransitionSymbols(state1, dfa);
-        Set<Character> symbols2 = getTransitionSymbols(state2, dfa);
-
-        // States should have at least one symbol in common to be worth merging
-        Set<Character> intersection = new HashSet<>(symbols1);
-        intersection.retainAll(symbols2);
-
-        return !intersection.isEmpty();
-    }
-
-
-    // In DFAMinimiser.java
-    private int comparePairsByPriority(StatePair pair1, StatePair pair2, DFA dfa) {
-        // Calculate shared transitions for pair1
-        int sharedTransitions1 = countSharedTransitions(pair1.state1, pair1.state2, dfa);
-
-        // Calculate shared transitions for pair2
-        int sharedTransitions2 = countSharedTransitions(pair2.state1, pair2.state2, dfa);
-
-        // Higher number of shared transitions means higher priority (lower value)
-        return Integer.compare(sharedTransitions2, sharedTransitions1);
-    }
-
-    private int countSharedTransitions(DFAState state1, DFAState state2, DFA dfa) {
-        Set<Character> symbols1 = getTransitionSymbols(state1, dfa);
-        Set<Character> symbols2 = getTransitionSymbols(state2, dfa);
-
-        // Count symbols that both states have transitions for
-        Set<Character> intersection = new HashSet<>(symbols1);
-        intersection.retainAll(symbols2);
-
-        return intersection.size();
-    }
-
-    private Set<Character> getTransitionSymbols(DFAState state, DFA dfa) {
-        return dfa.getTransitionsFrom(state)
-                .stream()
-                .map(DFATransition::getSymbol)
-                .collect(Collectors.toSet());
-    }
-
-    private static class StatePair {
-        DFAState state1;
-        DFAState state2;
-
-        StatePair(DFAState state1, DFAState state2) {
-            this.state1 = state1;
-            this.state2 = state2;
-        }
+        return null;
     }
 }
