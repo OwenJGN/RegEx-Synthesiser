@@ -16,7 +16,8 @@ public class Testing {
                 "D:/owenj/Documents/email.txt",
                 "D:/owenj/Documents/simple2.txt",
                 "D:/owenj/Documents/simple3.txt",
-                "D:/owenj/Documents/simple4.txt"
+                "D:/owenj/Documents/simple4.txt",
+                "D:/owenj/Documents/simple - Copy.txt"
         };
         ArrayList<String> regexs = new ArrayList<>();
         RegexSynthesiser synthesiser = new RegexSynthesiser(null);

@@ -1,0 +1,4 @@
+ab|abbb|a|abb|abbbbbbbb
+::
+aab|b|bba|aa|bbb
+::
