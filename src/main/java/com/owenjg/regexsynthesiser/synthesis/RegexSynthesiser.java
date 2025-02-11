@@ -22,13 +22,13 @@ public class RegexSynthesiser {
     private final StateEliminationAlgorithm stateElimination;
     private final RegexSimplifier regexSimplifier;
     private final ExampleValidator exampleValidator;
-    private final PatternGeneralizer patternGeneralizer;
+    private final RegexGeneralizer patternGeneralizer;
     @FXML
     private Label currentStatusLabel;
 
 
     public RegexSynthesiser(Label statusLabel) {
-        this.patternGeneralizer = new PatternGeneralizer();// Modified constructor
+        this.patternGeneralizer = new RegexGeneralizer();// Modified constructor
         this.prefixTreeBuilder = new PrefixTreeBuilder();
         this.dfaMinimiser = new DFAMinimiser();
         this.stateElimination = new StateEliminationAlgorithm();
@@ -51,57 +51,100 @@ public class RegexSynthesiser {
         try {
             validateInputExamples(positiveExamples, negativeExamples);
 
+            // First analyze patterns in positive examples
+            PatternAnalyzer analyzer = new PatternAnalyzer();
+            String generalizedPattern = analyzer.generalizePattern(positiveExamples);
+
+            // Build DFA from generalized pattern
             updateStatus("Building prefix tree...");
-            DFA pta = prefixTreeBuilder.buildPrefixTree(positiveExamples);
+            DFA pta = prefixTreeBuilder.buildPrefixTree(Collections.singletonList(generalizedPattern));
 
             updateStatus("Minimizing DFA...");
             DFA minimizedDFA = dfaMinimiser.minimizeDFA(pta);
 
+            // Skip generalization step since we've already generalized
             updateStatus("Refining DFA with negative examples...");
             DFA refinedDFA = refineWithNegativeExamples(minimizedDFA, negativeExamples);
 
             updateStatus("Extracting regex from DFA...");
             String regex = stateElimination.eliminateStates(refinedDFA);
+            System.out.println("Raw regex: " + regex);
 
             updateStatus("Simplifying regex...");
             String simplifiedRegex = RegexSimplifier.simplify(regex);
-            System.out.println(simplifiedRegex);
+            System.out.println("Simplified regex: " + simplifiedRegex);
 
             updateStatus("Validating regex...");
-            boolean isValid = exampleValidator.validateExamples(simplifiedRegex, positiveExamples, negativeExamples);
+            // First validate against the generalized pattern
+            boolean isValid = validatePattern(simplifiedRegex, positiveExamples, negativeExamples);
 
             if (isValid) {
+                System.out.println("Synthesis complete!");
                 if (progressCallback != null) {
                     progressCallback.onComplete(simplifiedRegex);
                 }
             } else {
-                updateStatus("Trying alternative patterns...");
-                String alternativeRegex = tryAlternativePatterns(positiveExamples, negativeExamples);
-                alternativeRegex = RegexSimplifier.simplify((alternativeRegex));
+                System.out.println("Warning: Generated regex failed validation");
                 if (progressCallback != null) {
-                    progressCallback.onComplete(alternativeRegex);
+                    progressCallback.onError("Generated regex failed validation");
                 }
             }
         } catch (Exception e) {
+            System.err.println("Error during synthesis: " + e.getMessage());
             e.printStackTrace();
-            handleError(e.getMessage());
+            if (progressCallback != null) {
+                progressCallback.onError("Synthesis failed: " + e.getMessage());
+            }
         }
     }
 
     private DFA refineWithNegativeExamples(DFA dfa, List<String> negativeExamples) {
-        for (String example : negativeExamples) {
-            int currentState = dfa.getStartState();
-            for (char c : example.toCharArray()) {
-                currentState = dfa.getTransition(currentState, c);
-                if (currentState == DFA.INVALID_STATE) {
-                    break;
-                }
-            }
-            if (dfa.isAcceptingState(currentState)) {
-                dfa.removeAcceptingState(currentState);
+        DFA refinedDFA = new DFA(dfa.getStartState());
+        Map<Integer, Integer> stateMap = new HashMap<>();
+        int nextState = dfa.getNumStates();
+
+        // Copy initial DFA structure
+        for (int state : dfa.getStates()) {
+            stateMap.put(state, state);
+            if (dfa.isAcceptingState(state)) {
+                refinedDFA.addAcceptingState(state);
             }
         }
-        return dfa;
+
+        // Process transitions
+        for (Map.Entry<Integer, Map<Character, Integer>> entry : dfa.getTransitions().entrySet()) {
+            int from = entry.getKey();
+            for (Map.Entry<Character, Integer> transition : entry.getValue().entrySet()) {
+                refinedDFA.addTransition(stateMap.get(from), transition.getKey(),
+                        stateMap.get(transition.getValue()));
+            }
+        }
+
+        // Handle negative examples
+        for (String example : negativeExamples) {
+            int currentState = refinedDFA.getStartState();
+            List<Integer> visitedStates = new ArrayList<>();
+
+            for (char c : example.toCharArray()) {
+                int nextStateTemp = refinedDFA.getTransition(currentState, c);
+                if (nextStateTemp == DFA.INVALID_STATE) {
+                    break;
+                }
+                visitedStates.add(currentState);
+                currentState = nextStateTemp;
+            }
+
+            // Check if the negative example is accepted by the DFA
+            if (refinedDFA.isAcceptingState(currentState)) {
+                // Create a new non-accepting state for the last visited state
+                int lastState = visitedStates.isEmpty() ? currentState : visitedStates.get(visitedStates.size() - 1);
+                int newState = nextState++;
+                refinedDFA.removeAcceptingState(lastState);
+                refinedDFA.addTransition(lastState, example.charAt(visitedStates.size()), newState);
+            }
+        }
+
+        return refinedDFA;
     }
 
     private boolean validatePattern(String regex, List<String> positiveExamples, List<String> negativeExamples) {
@@ -123,21 +166,21 @@ public class RegexSynthesiser {
         }
     }
 
-    private String tryAlternativePatterns(List<String> positiveExamples, List<String> negativeExamples) {
-        // Try splitting into subgroups if the examples have different patterns
-        List<List<String>> subgroups = findSimilarExamples(positiveExamples);
-
-        if (subgroups.size() > 1) {
-            // Generate pattern for each subgroup and combine with OR
-            List<String> patterns = subgroups.stream()
-                    .map(group -> patternGeneralizer.generalizePattern(group))
-                    .collect(Collectors.toList());
-            return "(" + String.join("|", patterns) + ")";
-        }
-
-        // If no subgroups work, fall back to exact matching only as last resort
-        return createExactMatchPattern(positiveExamples);
-    }
+//    private String tryAlternativePatterns(List<String> positiveExamples, List<String> negativeExamples) {
+//        // Try splitting into subgroups if the examples have different patterns
+//        List<List<String>> subgroups = findSimilarExamples(positiveExamples);
+//
+//        if (subgroups.size() > 1) {
+//            // Generate pattern for each subgroup and combine with OR
+//            List<String> patterns = subgroups.stream()
+//                    .map(group -> patternGeneralizer.generalizePattern(group))
+//                    .collect(Collectors.toList());
+//            return "(" + String.join("|", patterns) + ")";
+//        }
+//
+//        // If no subgroups work, fall back to exact matching only as last resort
+//        return createExactMatchPattern(positiveExamples);
+//    }
 
     private List<List<String>> findSimilarExamples(List<String> examples) {
         Map<Integer, List<String>> lengthGroups = examples.stream()
