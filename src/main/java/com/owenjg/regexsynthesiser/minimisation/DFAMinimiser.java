@@ -89,34 +89,7 @@ public class DFAMinimiser {
         return partitions;
     }
 
-    private Map<Integer, Set<Integer>> splitPartition(DFA dfa, Set<Integer> partition) {
-        Map<Integer, Set<Integer>> splitPartitions = new HashMap<>();
 
-        // Add caching for transition keys
-        Map<Integer, String> transitionKeyCache = new HashMap<>();
-
-        for (int state : partition) {
-            String transitionKey = transitionKeyCache.computeIfAbsent(state,
-                    k -> getTransitionKey(dfa, k, partition));
-            splitPartitions.computeIfAbsent(transitionKey.hashCode(),
-                    k -> new HashSet<>()).add(state);
-        }
-
-        // Only return splits if we actually split something
-        return splitPartitions.size() > 1 ? splitPartitions :
-                Collections.singletonMap(partition.iterator().next(), partition);
-    }
-
-    private String getTransitionKey(DFA dfa, int state, Set<Integer> partition) {
-        StringBuilder sb = new StringBuilder();
-
-        for (char symbol : dfa.getAlphabet()) {
-            int nextState = dfa.getTransition(state, symbol);
-            sb.append(partition.contains(nextState) ? "1" : "0");
-        }
-
-        return sb.toString();
-    }
 
     private DFA buildMinimizedDFA(DFA dfa, Map<Integer, Set<Integer>> partitions) {
         DFA minimizedDFA = new DFA(0);

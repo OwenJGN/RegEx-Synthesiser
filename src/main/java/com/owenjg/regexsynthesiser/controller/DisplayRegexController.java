@@ -162,18 +162,6 @@ public class DisplayRegexController {
         updateStatusLabel("Copied both regexes to clipboard!");
     }
 
-    @FXML
-    protected void onCopyRatiosButtonClick() throws IOException {
-        copyToClipboard(ratioLabel.getText());
-        updateStatusLabel("Copied ratios to clipboard!");
-    }
-
-    // For backward compatibility
-    @FXML
-    protected void onCopyButtonClick() throws IOException {
-        // Default to copying both regexes
-        onCopyBothButtonClick();
-    }
 
     private void copyToClipboard(String text) {
         StringSelection stringSelection = new StringSelection(text);
@@ -223,35 +211,7 @@ public class DisplayRegexController {
      * @param dfaRegex The DFA-based regex
      */
 
-    private void updateStatusWithRatios(String analyzerRegex, String dfaRegex) {
-        if (analyzerRegex == null || dfaRegex == null ||
-                analyzerRegex.equals("Not available") || dfaRegex.equals("Not available")) {
-            statusText.setText("Ratio metrics not available");
-            return;
-        }
 
-        // Calculate the ratios
-        double lengthRatio = RegexComparator.getLengthRatio(analyzerRegex, dfaRegex);
-        double complexityRatio = RegexComparator.getComplexityRatio(analyzerRegex, dfaRegex);
-
-        // Format the ratios
-        String formattedLengthRatio = String.format("%.2f:1", lengthRatio);
-        String formattedComplexityRatio = String.format("%.2f:1", complexityRatio);
-
-        // Create a concise metrics message for the status area
-        String ratioMetrics = String.format("Length ratio (PA:DFA): %s   Complexity ratio (PA:DFA): %s",
-                formattedLengthRatio, formattedComplexityRatio);
-
-        // Update the status text
-        statusText.setText(ratioMetrics);
-    }
-
-// Then update both the setRegexValues and parseRegexResults methods
-// to call this new method instead of anything related to ratioLabel:
-
-    // In setRegexValues:
-
-    // In parseRegexResults:
     private void parseRegexResults(String combinedRegex) {
         // Initialize default values
         analyzerRegex = "Not available";

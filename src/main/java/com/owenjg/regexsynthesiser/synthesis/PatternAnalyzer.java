@@ -407,19 +407,4 @@ public class PatternAnalyzer {
                 .collect(Collectors.joining()) + "]";
     }
 
-    public String generateDFAFriendlyPattern(List<String> positiveExamples, List<String> negativeExamples) {
-        String pattern = generalizePattern(positiveExamples, negativeExamples);
-
-        // Simplify common regex constructs that might be harder for DFA conversion
-        pattern = pattern.replaceAll("\\{\\d+,\\}", "*")  // Replace {n,} with *
-                .replaceAll("\\{\\d+\\}", "+")     // Replace {n} with +
-                .replaceAll("\\{\\d+,\\d+\\}", "*"); // Replace {n,m} with *
-
-        // Ensure alternations are properly grouped
-        if (pattern.contains("|") && !pattern.startsWith("(")) {
-            pattern = "(" + pattern + ")";
-        }
-
-        return pattern;
-    }
 }

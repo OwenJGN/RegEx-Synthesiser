@@ -16,7 +16,6 @@ import java.util.*;
 public class RegexSynthesiser {
     private volatile boolean cancelRequested = false;
     private ProgressCallback progressCallback;
-    private final PrefixTreeBuilder prefixTreeBuilder;
     private final DFAMinimiser dfaMinimiser;
     private final StateEliminationAlgorithm stateElimination;
     private final RegexSimplifier regexSimplifier;
@@ -39,7 +38,6 @@ public class RegexSynthesiser {
         this.dfaBuilder = new DFABuilder();
         this.patternAnalyzer = new PatternAnalyzer();
         this.patternGeneralizer = new RegexGeneralizer();
-        this.prefixTreeBuilder = new PrefixTreeBuilder();
         this.dfaMinimiser = new DFAMinimiser();
         this.stateElimination = new StateEliminationAlgorithm();
         this.regexSimplifier = new RegexSimplifier();
