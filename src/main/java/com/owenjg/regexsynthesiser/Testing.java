@@ -12,12 +12,12 @@ import java.util.List;
 public class Testing {
     public static void main(String[] args) {
         String[] filePaths = {
-                "D:/owenj/Documents/simple.txt",
-                "D:/owenj/Documents/email.txt",
-                "D:/owenj/Documents/simple2.txt",
-                "D:/owenj/Documents/simple3.txt",
-                "D:/owenj/Documents/simple4.txt",
-                "D:/owenj/Documents/simple - Copy.txt"
+                "C:\\Users\\owenj\\GitHub Repos\\RegEx-Synthesiser\\simple.txt",
+                "C:\\Users\\owenj\\GitHub Repos\\RegEx-Synthesiser\\email.txt",
+                "C:\\Users\\owenj\\GitHub Repos\\RegEx-Synthesiser\\simple2.txt",
+                "C:\\Users\\owenj\\GitHub Repos\\RegEx-Synthesiser\\simple3.txt",
+                "C:\\Users\\owenj\\GitHub Repos\\RegEx-Synthesiser\\simple4.txt",
+                "C:\\Users\\owenj\\GitHub Repos\\RegEx-Synthesiser\\simple - Copy.txt"
         };
         ArrayList<String> regexs = new ArrayList<>();
         RegexSynthesiser synthesiser = new RegexSynthesiser(null);

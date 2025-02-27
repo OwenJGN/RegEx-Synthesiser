@@ -2,8 +2,6 @@ package com.owenjg.regexsynthesiser.synthesis;
 
 import com.owenjg.regexsynthesiser.dfa.DFA;
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class StateEliminationAlgorithm {
     private Map<StateTransition, String> regexTransitions = new HashMap<>();
@@ -53,7 +51,6 @@ public class StateEliminationAlgorithm {
                 }
             }
         }
-
     }
 
     private void eliminateState(DFA dfa, int state) {
@@ -129,6 +126,11 @@ public class StateEliminationAlgorithm {
             }
         }
 
+        // Handle case where start state is accepting (empty string)
+        if (dfa.isAcceptingState(startState)) {
+            patterns.add("ε"); // Empty string representation
+        }
+
         if (patterns.isEmpty()) {
             return "";
         }
@@ -138,6 +140,16 @@ public class StateEliminationAlgorithm {
 
         // Join patterns with OR
         String regex = String.join("|", patterns);
+        // Replace ε with empty string after combination
+        regex = regex.replace("ε", "");
+        if (regex.equals("|")) {
+            regex = "";
+        } else if (regex.startsWith("|")) {
+            regex = regex.substring(1);
+        } else if (regex.endsWith("|")) {
+            regex = regex.substring(0, regex.length() - 1);
+        }
+
         return patterns.size() > 1 ? "(" + regex + ")" : regex;
     }
 
@@ -191,5 +203,3 @@ public class StateEliminationAlgorithm {
         }
     }
 }
-
-

@@ -1,10 +1,12 @@
 package com.owenjg.regexsynthesiser.synthesis;
 
 import com.owenjg.regexsynthesiser.dfa.DFA;
+import com.owenjg.regexsynthesiser.dfa.DFABuilder;
 import com.owenjg.regexsynthesiser.exceptions.RegexSynthesisException;
 import com.owenjg.regexsynthesiser.minimisation.DFAMinimiser;
 import com.owenjg.regexsynthesiser.simplification.RegexSimplifier;
 import com.owenjg.regexsynthesiser.validation.ExampleValidator;
+import com.owenjg.regexsynthesiser.validation.RegexComparator;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -20,6 +22,10 @@ public class RegexSynthesiser {
     private final RegexSimplifier regexSimplifier;
     private final ExampleValidator exampleValidator;
     private final RegexGeneralizer patternGeneralizer;
+    private final DFABuilder dfaBuilder;
+    private final RegexComparator regexComparator;
+    private List<String> positiveExamples;
+    private List<String> negativeExamples;
 
     private final PatternAnalyzer patternAnalyzer;
     @FXML
@@ -27,8 +33,12 @@ public class RegexSynthesiser {
 
 
     public RegexSynthesiser(Label statusLabel) {
+        this.regexComparator = new RegexComparator();
+        this.positiveExamples = new ArrayList<>();
+        this.negativeExamples = new ArrayList<>();
+        this.dfaBuilder = new DFABuilder();
         this.patternAnalyzer = new PatternAnalyzer();
-        this.patternGeneralizer = new RegexGeneralizer();// Modified constructor
+        this.patternGeneralizer = new RegexGeneralizer();
         this.prefixTreeBuilder = new PrefixTreeBuilder();
         this.dfaMinimiser = new DFAMinimiser();
         this.stateElimination = new StateEliminationAlgorithm();
@@ -44,52 +54,70 @@ public class RegexSynthesiser {
         void onComplete(String generatedRegex);
         void onCancel();
         void onError(String errorMessage);
-
     }
 
     public void synthesise(List<String> positiveExamples, List<String> negativeExamples) {
         try {
             validateInputExamples(positiveExamples, negativeExamples);
 
-            // Step 1: Generate initial pattern from examples
-            updateStatus("Analyzing patterns in examples...");
-            String initialPattern = patternAnalyzer.generalizePattern(positiveExamples, negativeExamples);
-            System.out.println("Initial pattern: " + initialPattern);
+            this.positiveExamples = positiveExamples;
+            this.negativeExamples = negativeExamples;
 
-            // Step 2: Create DFA from the pattern
-            updateStatus("Converting pattern to DFA...");
-            DFA patternDFA = prefixTreeBuilder.buildPrefixTree(Collections.singletonList(initialPattern));
+            // Generate regex from pattern analyzer
+            String analyzerRegex = createRegexFromAnalyser();
 
-            // Step 3: Minimize DFA
-            updateStatus("Minimizing DFA...");
-            DFA minimizedDFA = dfaMinimiser.minimizeDFA(patternDFA);
+            // Generate regex from DFA
+            String dfaRegex = createRegexFromDFA();
 
-            // Step 5: Convert back to regex
-            updateStatus("Converting DFA back to regex...");
-            String regex = stateElimination.eliminateStates(minimizedDFA);
-            System.out.println("Raw regex: " + regex);
+            // Display both regexes
+            System.out.println("Pattern Analyzer Regex: " + analyzerRegex);
+            System.out.println("DFA-based Regex: " + dfaRegex);
 
-            // Step 6: Simplify final regex
-            updateStatus("Simplifying final regex...");
-            String simplifiedRegex = RegexSimplifier.simplify(regex);
-            System.out.println("Simplified regex: " + simplifiedRegex);
+            // Validate both regexes
+            boolean analyzerValid = analyzerRegex != null &&
+                    exampleValidator.validateExamples(analyzerRegex, positiveExamples, negativeExamples);
+            boolean dfaValid = dfaRegex != null &&
+                    exampleValidator.validateExamples(dfaRegex, positiveExamples, negativeExamples);
 
-            // Validate final result
-            updateStatus("Validating regex...");
-            boolean isValid = exampleValidator.validateExamples(simplifiedRegex, positiveExamples, negativeExamples);
+            System.out.println("Validation results:");
+            System.out.println("Pattern Analyzer regex valid: " + analyzerValid);
+            System.out.println("DFA-based regex valid: " + dfaValid);
 
-            if (isValid) {
-                System.out.println("Synthesis complete!");
+            // Compare the regexes if both are valid
+            if (analyzerValid && dfaValid) {
+                updateStatus("Comparing regex patterns...");
+                String comparison = RegexComparator.compareRegexes(analyzerRegex, dfaRegex);
+                System.out.println(comparison);
+
+                // Update the UI with comparison info
                 if (progressCallback != null) {
-                    progressCallback.onComplete(simplifiedRegex);
+                    progressCallback.onComplete(comparison);
                 }
             } else {
-                System.out.println("Warning: Generated regex failed validation");
+                // Format a simple string containing both regexes and validation results only
+                StringBuilder resultsBuilder = new StringBuilder();
+                resultsBuilder.append("GENERATED REGEXES\n\n");
+
+                resultsBuilder.append("Pattern Analyzer: ").append(analyzerRegex != null ? analyzerRegex : "N/A")
+                        .append(" (").append(analyzerValid ? "Valid" : "Invalid").append(")\n\n");
+
+                resultsBuilder.append("DFA-based: ").append(dfaRegex != null ? dfaRegex : "N/A")
+                        .append(" (").append(dfaValid ? "Valid" : "Invalid").append(")\n");
 
                 if (progressCallback != null) {
-                    progressCallback.onError("Generated regex failed validation");
+                    progressCallback.onComplete(resultsBuilder.toString());
+                }
+
+                // Log any validation issues
+                if (!analyzerValid && !dfaValid) {
+                    System.out.println("Warning: Generated regexes failed validation");
+                    if (progressCallback != null) {
+                        progressCallback.onError("Both approaches failed to generate a valid regex");
+                    }
                 }
             }
+
+            updateStatus("Synthesis complete!");
         } catch (Exception e) {
             System.err.println("Error during synthesis: " + e.getMessage());
             e.printStackTrace();
@@ -97,6 +125,35 @@ public class RegexSynthesiser {
                 progressCallback.onError("Synthesis failed: " + e.getMessage());
             }
         }
+    }
+
+    private String createRegexFromAnalyser() {
+        updateStatus("Analyzing patterns in examples...");
+        String regex = patternAnalyzer.generalizePattern(positiveExamples, negativeExamples);
+        System.out.println("Initial pattern analyzer result: " + regex);
+
+        String simplifiedRegex = RegexSimplifier.simplify(regex);
+        System.out.println("Simplified pattern analyzer regex: " + simplifiedRegex);
+        return simplifiedRegex;
+    }
+
+    private String createRegexFromDFA() {
+        updateStatus("Building DFA from examples...");
+        DFA dfa = dfaBuilder.buildDFAFromExamples(positiveExamples, negativeExamples);
+
+        updateStatus("Minimizing DFA...");
+        DFA minimisedDFA = dfaMinimiser.minimizeDFA(dfa);
+
+        updateStatus("Generating regex from DFA...");
+        String regex = stateElimination.eliminateStates(minimisedDFA);
+        System.out.println("Raw DFA-based regex: " + regex);
+
+        updateStatus("Simplifying DFA-based regex...");
+        String simplifiedRegex = RegexSimplifier.simplify(regex);
+        System.out.println("Simplified DFA-based regex: " + simplifiedRegex);
+
+
+        return simplifiedRegex;
     }
 
     private void validateInputExamples(List<String> positiveExamples, List<String> negativeExamples)
