@@ -96,12 +96,6 @@ public class RegexSynthesiser {
                 StringBuilder resultsBuilder = new StringBuilder();
                 resultsBuilder.append("GENERATED REGEXES\n\n");
 
-                resultsBuilder.append("Pattern Analyzer: ").append(analyzerRegex != null ? analyzerRegex : "N/A")
-                        .append(" (").append(analyzerValid ? "Valid" : "Invalid").append(")\n\n");
-
-                resultsBuilder.append("DFA-based: ").append(dfaRegex != null ? dfaRegex : "N/A")
-                        .append(" (").append(dfaValid ? "Valid" : "Invalid").append(")\n");
-
                 if (progressCallback != null) {
                     progressCallback.onComplete(resultsBuilder.toString());
                 }

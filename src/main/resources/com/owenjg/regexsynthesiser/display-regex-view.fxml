@@ -6,64 +6,77 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.control.Separator?>
 
 <VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.owenjg.regexsynthesiser.controller.DisplayRegexController"
-      spacing="20" alignment="CENTER" styleClass="vbox">
+      spacing="20" alignment="CENTER" styleClass="vbox" prefWidth="800" prefHeight="700">
     <padding>
-        <Insets top="20" bottom="20" left="20" right="20"/>
+        <Insets top="35" bottom="35" left="40" right="40"/>
     </padding>
 
-    <Label fx:id="titleText" styleClass="title" text="Generated Regular Expressions"/>
-    <Label fx:id="elapsedTimeText" styleClass="status-label" text=""/>
-
+    <!-- Header section -->
+    <Label fx:id="titleText" styleClass="title" text="Generated Regular Expressions" alignment="CENTER"/>
+    <Label fx:id="elapsedTimeText" styleClass="status-label" text="" alignment="CENTER"/>
 
     <!-- Pattern Analyzer Regex -->
-    <VBox spacing="5" styleClass="regex-container">
+    <VBox spacing="10" styleClass="regex-container">
         <Label styleClass="subtitle" text="Pattern Analyzer:"/>
-        <StackPane styleClass="regex-display-container">
+        <StackPane styleClass="regex-display-container" minHeight="100">
             <ScrollPane fitToWidth="true" styleClass="regex-scroll-pane">
                 <VBox>
                     <Label fx:id="analyzerRegexLabel" styleClass="regex-text" wrapText="true"/>
                 </VBox>
                 <padding>
-                    <Insets top="8" right="8" bottom="8" left="8"/>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
                 </padding>
             </ScrollPane>
         </StackPane>
-        <Button text="Copy" onAction="#onCopyAnalyzerButtonClick"
-                styleClass="button, copy-button" maxWidth="100"/>
+        <HBox alignment="CENTER_RIGHT">
+            <Button text="Copy" onAction="#onCopyAnalyzerButtonClick"
+                    styleClass="button, copy-button" maxWidth="100"/>
+        </HBox>
     </VBox>
 
     <!-- DFA-based Regex -->
-    <VBox spacing="5" styleClass="regex-container">
+    <VBox spacing="10" styleClass="regex-container">
         <Label styleClass="subtitle" text="DFA-based Regex:"/>
-        <StackPane styleClass="regex-display-container">
+        <StackPane styleClass="regex-display-container" minHeight="100">
             <ScrollPane fitToWidth="true" styleClass="regex-scroll-pane">
                 <VBox>
                     <Label fx:id="dfaRegexLabel" styleClass="regex-text" wrapText="true"/>
                 </VBox>
                 <padding>
-                    <Insets top="8" right="8" bottom="8" left="8"/>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
                 </padding>
             </ScrollPane>
         </StackPane>
-        <Button text="Copy" onAction="#onCopyDFAButtonClick"
-                styleClass="button, copy-button" maxWidth="100"/>
+        <HBox alignment="CENTER_RIGHT">
+            <Button text="Copy" onAction="#onCopyDFAButtonClick"
+                    styleClass="button, copy-button" maxWidth="100"/>
+        </HBox>
     </VBox>
 
-    <Label fx:id="ratioLabel"
-           styleClass="ratio-text"
-           wrapText="true"
-           textAlignment="CENTER"
-           alignment="CENTER"
-           minHeight="50"
-           maxWidth="600"/>
-    <!-- Buttons -->
-    <HBox spacing="10" alignment="CENTER">
-        <Button text="Export Examples" styleClass="button" onAction="#onExportButtonClick"/>
-        <Button text="Copy Both Regexes" styleClass="button secondary" onAction="#onCopyBothButtonClick"/>
-        <Button text="Back" styleClass="button danger" onAction="#onBackButtonClick"/>
+    <!-- Comparison metrics -->
+    <VBox alignment="CENTER" spacing="10">
+        <Label text="Comparison Metrics" styleClass="subtitle" textAlignment="CENTER"/>
+        <Label fx:id="ratioLabel"
+               styleClass="ratio-text"
+               wrapText="true"
+               textAlignment="CENTER"
+               alignment="CENTER"
+               minHeight="70"
+               prefWidth="720"/>
+    </VBox>
+
+    <Separator />
+
+    <!-- Action buttons -->
+    <HBox spacing="15" alignment="CENTER">
+        <Button text="Export Examples" styleClass="button, secondary" onAction="#onExportButtonClick" prefWidth="160"/>
+        <Button text="Copy Both Regexes" styleClass="button" onAction="#onCopyBothButtonClick" prefWidth="250"/>
+        <Button text="Back" styleClass="button, danger" onAction="#onBackButtonClick" prefWidth="120"/>
     </HBox>
 
-    <Label fx:id="statusText" styleClass="status-label" text=""/>
+    <!-- Status area -->
+    <Label fx:id="statusText" styleClass="status-label" text="" alignment="CENTER"/>
 </VBox>

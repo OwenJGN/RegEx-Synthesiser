@@ -2,13 +2,49 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.geometry.Insets?>
-<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.owenjg.regexsynthesiser.controller.MenuController" spacing="20" alignment="CENTER">
-    <padding>
-        <Insets top="20" bottom="20" left="20" right="20"/>
-    </padding>
-    <Label fx:id="titleText" styleClass="title" text="A Regular Expression Synthesiser using positive and negative examples!"/>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.text.Text?>
 
-    <Button text="Start" styleClass="button" onAction="#onStartButtonClick"/>
-    <Button text="Quit" styleClass="button danger" onAction="#onQuitButtonClick"/>
-</VBox>
+<StackPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.owenjg.regexsynthesiser.controller.MenuController"
+           style="-fx-background-color: -background-color;">
+    <padding>
+        <Insets top="30" bottom="30" left="30" right="30"/>
+    </padding>
+
+    <VBox spacing="25" alignment="CENTER" styleClass="vbox" maxWidth="700">
+        <padding>
+            <Insets top="40" bottom="40" left="40" right="40"/>
+        </padding>
+
+        <!-- Title and description -->
+        <Label fx:id="titleText" styleClass="title" text="Regular Expression Synthesiser"
+               alignment="CENTER" textAlignment="CENTER"/>
+
+        <Label styleClass="subtitle" text="Create regular expressions from examples"
+               alignment="CENTER" textAlignment="CENTER"/>
+
+        <Text wrappingWidth="600" textAlignment="CENTER"
+              text="This tool generates regular expressions from positive and negative examples. Simply provide strings that should match (positive) and strings that shouldn't match (negative), and the synthesiser will create an optimal regex pattern."
+              style="-fx-font-size: 14px; -fx-fill: -text-light;"/>
+
+        <HBox alignment="CENTER" spacing="15">
+            <padding>
+                <Insets top="25" bottom="10"/>
+            </padding>
+
+            <Button fx:id="startButton" text="Start Synthesiser" styleClass="button" onAction="#onStartButtonClick"
+                    prefWidth="200" prefHeight="50" style="-fx-font-size: 16px;"/>
+        </HBox>
+
+        <Button text="Quit" styleClass="button, danger" onAction="#onQuitButtonClick"
+                prefWidth="120"/>
+
+        <Label text="© 262924 - Regex Synthesiser"
+               style="-fx-font-size: 12px; -fx-text-fill: -text-light;"
+               alignment="CENTER" textAlignment="CENTER"/>
+    </VBox>
+</StackPane>

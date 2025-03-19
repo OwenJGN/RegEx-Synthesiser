@@ -1,34 +1,71 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.Button?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.HBox?>
-<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.owenjg.regexsynthesiser.controller.InputExamplesController" spacing="20" alignment="CENTER">
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.control.Separator?>
+
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.owenjg.regexsynthesiser.controller.InputExamplesController"
+      spacing="20" alignment="CENTER" styleClass="vbox">
     <padding>
-        <Insets top="20" bottom="20" left="20" right="20"/>
+        <Insets top="25" bottom="25" left="30" right="30"/>
     </padding>
-    <Label fx:id="titleText" styleClass="title" text="Enter Positive and Negative Examples, with | as the separator (the|cat|jumped...)"/>
 
-    <Label text="Positive Examples" styleClass="positive"/>
-    <TextArea fx:id="positiveExamplesField" styleClass="text-area" promptText="Enter positive examples" wrapText="true"/>
+    <!-- Page header -->
+    <Label fx:id="titleText" styleClass="title" text="Enter Examples" alignment="CENTER"/>
+    <Label text="Provide positive and negative examples separated by '|' character (e.g. cat|dog|mouse)"
+           alignment="CENTER" textAlignment="CENTER" style="-fx-text-fill: -text-light;"/>
 
-    <Label text="Negative Examples" styleClass="negative"/>
-    <TextArea fx:id="negativeExamplesField" styleClass="text-area" promptText="Enter negative examples" wrapText="true"/>
+    <!-- Input sections with grid for better layout -->
+    <GridPane vgap="15" hgap="15">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="50" />
+            <ColumnConstraints percentWidth="50" />
+        </columnConstraints>
 
-    <Label fx:id="fileLabel" text="Import examples from a text file:" styleClass="status-label"/>
+        <!-- Positive Examples -->
+        <VBox spacing="10" GridPane.columnIndex="0" GridPane.rowIndex="0">
+            <Label text="Positive Examples" styleClass="positive"/>
+            <TextArea fx:id="positiveExamplesField" styleClass="text-area"
+                      promptText="Enter strings that should match"
+                      wrapText="true" prefHeight="180"/>
+        </VBox>
 
-    <Button fx:id="selectFileButton" text="Select File" styleClass="button" onAction="#onSelectFileButtonClick"/>
+        <!-- Negative Examples -->
+        <VBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="0">
+            <Label text="Negative Examples" styleClass="negative"/>
+            <TextArea fx:id="negativeExamplesField" styleClass="text-area"
+                      promptText="Enter strings that should NOT match"
+                      wrapText="true" prefHeight="180"/>
+        </VBox>
+    </GridPane>
 
-    <HBox styleClass="hbox">
-        <Button fx:id="generateButtonInput" text="Generate Input" styleClass="button secondary" onAction="#onGenerateButtonInputClick"/>
-        <Button fx:id="generateButtonFile" text="Generate File" styleClass="button secondary" onAction="#onGenerateButtonFileClick"/>
+    <Separator />
+
+    <!-- File import section -->
+    <VBox spacing="8" alignment="CENTER">
+        <Label fx:id="fileLabel" text="Import examples from a text file:" styleClass="status-label"/>
+        <Button fx:id="selectFileButton" text="Select File" styleClass="button, secondary"
+                onAction="#onSelectFileButtonClick" prefWidth="150"/>
+    </VBox>
+
+    <!-- Generation buttons -->
+    <HBox styleClass="hbox" alignment="CENTER" spacing="15">
+        <Button fx:id="generateButtonInput" text="Generate from Input"
+                styleClass="button" onAction="#onGenerateButtonInputClick"
+                prefWidth="200"/>
+        <Button fx:id="generateButtonFile" text="Generate from File"
+                styleClass="button" onAction="#onGenerateButtonFileClick"
+                prefWidth="200"/>
     </HBox>
 
-    <Label fx:id="statusLabel" styleClass="status-label" text=""/>
-    <Label fx:id="currentStatusLabel" styleClass="status-label" text=""/>
-
-
+    <!-- Status area -->
+    <VBox spacing="5" alignment="CENTER" style="-fx-padding: 10;">
+        <Label fx:id="statusLabel" styleClass="status-label" text=""/>
+        <Label fx:id="currentStatusLabel" styleClass="status-label" text=""/>
+    </VBox>
 </VBox>

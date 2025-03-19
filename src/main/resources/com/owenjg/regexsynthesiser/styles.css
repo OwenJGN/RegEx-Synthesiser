@@ -1,69 +1,86 @@
-/* Modern, clean, and professional color scheme */
+/* Modern, clean, and professional color scheme with improved aesthetics */
 .root {
     /* Color Palette */
-    -primary-color: #663a82;
-    -secondary-color: #006400;
-    -background-color: #f4f6f7;
-    -text-color: #2c3e50;
-    -accent-color: #e74c3c;
+    -primary-color: #4a6baf;       /* Royal blue - more modern */
+    -primary-light: #6b8fd7;       /* Lighter primary for hover states */
+    -primary-dark: #2d4b92;        /* Darker primary for active states */
+    -secondary-color: #2e7d32;     /* Forest green for secondary actions */
+    -background-color: #f7f9fc;    /* Soft light blue background */
+    -card-background: #ffffff;     /* Card background */
+    -text-color: #2c3e50;          /* Dark blue-gray for text */
+    -text-light: #5a6a7e;          /* Lighter text for subtitles */
+    -accent-color: #e74c3c;        /* Red accent for warnings/errors */
+    -border-color: #e2e8f0;        /* Light gray for borders */
+    -success-color: #4caf50;       /* Green for success indicators */
 
     /* Global Font Settings */
-    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     -fx-background-color: -background-color;
 }
 
-/* VBox Styling */
-.vbox {
-    -fx-background-color: white;
-    -fx-background-radius: 10;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 2);
-    -fx-padding: 30;
-}
-
-/* Label Styling */
+/* Typography */
 .label {
     -fx-text-fill: -text-color;
     -fx-font-size: 14px;
 }
 
 .label.title {
-    -fx-font-size: 18px;
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
     -fx-text-fill: -primary-color;
-}
-
-.label.positive{
-    -fx-font-weight: bold;
-    -fx-font-size: 16px;
-    -fx-text-fill: #269e00;
-}
-
-.label.negative{
-    -fx-font-weight: bold;
-    -fx-font-size: 16px;
-    -fx-text-fill: #9e1a00;
+    -fx-padding: 0 0 10 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 1, 0, 0, 1);
 }
 
 .label.subtitle {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -primary-dark;
+    -fx-padding: 5 0 5 0;
+}
+
+.label.positive {
     -fx-font-weight: bold;
     -fx-font-size: 16px;
-    -fx-text-fill: -secondary-color;
+    -fx-text-fill: -success-color;
+}
+
+.label.negative {
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+    -fx-text-fill: -accent-color;
+}
+
+/* Card Container Styling */
+.vbox {
+    -fx-background-color: -card-background;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 12, 0.2, 0, 3);
+    -fx-padding: 30;
+    -fx-spacing: 16;
 }
 
 /* Button Styling */
 .button {
     -fx-background-color: -primary-color;
     -fx-text-fill: white;
-    -fx-background-radius: 5;
-    -fx-padding: 10 20;
+    -fx-background-radius: 8;
+    -fx-padding: 12 22;
     -fx-font-size: 14px;
+    -fx-font-weight: bold;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0.3, 0, 1);
-    -fx-transition: -fx-background-color 0.3s;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 5, 0.2, 0, 2);
+    -fx-transition: -fx-background-color 0.2s ease;
 }
 
 .button:hover {
-    -fx-background-color: derive(-primary-color, -20%);
+    -fx-background-color: -primary-light;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 6, 0.25, 0, 2);
+}
+
+.button:pressed {
+    -fx-background-color: -primary-dark;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 3, 0.15, 0, 1);
 }
 
 .button.secondary {
@@ -71,7 +88,7 @@
 }
 
 .button.secondary:hover {
-    -fx-background-color: derive(-secondary-color, -20%);
+    -fx-background-color: derive(-secondary-color, 15%);
 }
 
 .button.danger {
@@ -79,99 +96,83 @@
 }
 
 .button.danger:hover {
-    -fx-background-color: derive(-accent-color, -20%);
+    -fx-background-color: derive(-accent-color, 15%);
 }
 
-/* Text Area Styling */
-.text-area {
+/* Text Input Styling */
+.text-area, .text-field {
     -fx-background-color: white;
-    -fx-background-radius: 5;
-    -fx-border-color: #bdc3c7;
-    -fx-border-radius: 5;
+    -fx-background-radius: 8;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 8;
     -fx-font-size: 14px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 3, 0.1, 0, 1);
+    -fx-transition: -fx-border-color 0.2s ease;
+}
+
+.text-area:focused, .text-field:focused {
+    -fx-border-color: -primary-color;
+    -fx-effect: dropshadow(gaussian, rgba(74,107,175,0.1), 5, 0.2, 0, 1);
 }
 
 .text-area .content {
     -fx-background-color: white;
+    -fx-background-radius: 8;
 }
 
 /* HBox Styling */
 .hbox {
     -fx-background-color: transparent;
     -fx-alignment: center;
-    -fx-spacing: 10;
+    -fx-spacing: 12;
+    -fx-padding: 8 0;
 }
 
 /* Status Label Styling */
 .status-label {
-    -fx-text-fill: -secondary-color;
-    -fx-font-weight: bold;
+    -fx-text-fill: -text-light;
+    -fx-font-style: italic;
+    -fx-font-size: 14px;
+    -fx-padding: 5 0;
 }
 
 .status-label.error {
     -fx-text-fill: -accent-color;
-}
-
-/* Specific Enhancements */
-#titleText {
-    -fx-font-size: 20px;
     -fx-font-weight: bold;
-    -fx-text-fill: -primary-color;
-}
-
-#generatedRegexLabel {
-    -fx-background-color: #f1f3f4;
-    -fx-padding: 10;
-    -fx-background-radius: 5;
-}
-
-#elapsedTimeText {
-    -fx-font-size: 16px;
-    -fx-text-fill: -secondary-color;
-    -fx-font-weight: bold;
+    -fx-font-style: normal;
 }
 
 /* File Selection Styling */
 #fileLabel {
-    -fx-font-style: italic;
-    -fx-text-fill: #7f8c8d;
+    -fx-text-fill: -text-light;
 }
 
-/* Responsive Design */
-.root {
-    -fx-font-size: 14px;
-}
-
-@media (max-width: 600px) {
-    .root {
-        -fx-font-size: 12px;
-    }
-
-    .button {
-        -fx-padding: 8 15;
-    }
-}
+/* Enhanced Regex Container Styling */
 .regex-container {
-    -fx-background-color: white;
-    -fx-background-radius: 8;
-    -fx-border-color: #e0e0e0;
-    -fx-border-radius: 8;
-    -fx-padding: 12;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 5, 0.2, 0, 1);
+    -fx-background-color: -card-background;
+    -fx-background-radius: 10;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 10;
+    -fx-padding: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 6, 0.1, 0, 1);
+    -fx-spacing: 8;
 }
 
 .regex-display-container {
-    -fx-background-color: #f8f9fa;
-    -fx-background-radius: 6;
-    -fx-border-color: #e0e0e0;
-    -fx-border-radius: 6;
-    -fx-min-height: 60px;
+    -fx-background-color: #f8f9fc;
+    -fx-background-radius: 8;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 8;
+    -fx-min-height: 65px;
+    -fx-padding: 5;
 }
 
 .regex-text {
-    -fx-font-family: 'Consolas', 'Courier New', monospace;
-    -fx-font-size: 14px;
-    -fx-text-fill: #007bff;
+    -fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    -fx-font-size: 15px;
+    -fx-text-fill: #1976d2;
     -fx-padding: 5;
 }
 
@@ -179,49 +180,79 @@
     -fx-background: transparent;
     -fx-background-color: transparent;
     -fx-border-color: transparent;
+    -fx-padding: 5;
 }
 
 .regex-scroll-pane > .viewport {
     -fx-background-color: transparent;
 }
 
+/* Copy Button Enhancement */
 .copy-button {
-    -fx-background-color: #6c757d;
+    -fx-background-color: #5a6a7e;
     -fx-text-fill: white;
-    -fx-background-radius: 4;
+    -fx-background-radius: 6;
     -fx-font-size: 12px;
-    -fx-padding: 5 10;
+    -fx-padding: 6 12;
     -fx-cursor: hand;
     -fx-alignment: center-right;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 3, 0.2, 0, 1);
 }
 
 .copy-button:hover {
-    -fx-background-color: #5a6268;
+    -fx-background-color: #455a79;
 }
 
-/* Override for regex labels */
-#analyzerRegexLabel, #dfaRegexLabel {
-    -fx-background-color: transparent;
-    -fx-padding: 8;
-}
-.metrics-container {
-    -fx-background-color: #f0f5ff;
-    -fx-background-radius: 8;
-    -fx-border-color: #b3c6ff;
-    -fx-border-radius: 8;
-    -fx-padding: 12;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 5, 0.2, 0, 1);
+.copy-button:pressed {
+    -fx-background-color: #384b67;
 }
 
+/* Ratio Text Enhancement */
 .ratio-text {
-    -fx-font-family: 'Consolas', 'Courier New', monospace;
+    -fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     -fx-font-size: 14px;
     -fx-font-weight: bold;
-    -fx-text-fill: #2c4dac;
-    -fx-padding: 5;
+    -fx-text-fill: #1b3f8f;
+    -fx-padding: 10 15;
+    -fx-background-color: #e6eeff;
+    -fx-background-radius: 8;
+    -fx-border-color: #c9d8ff;
+    -fx-border-radius: 8;
 }
 
-.metrics-container .subtitle {
-    -fx-text-fill: #1a237e;
+/* Scroll Bar Styling */
+.scroll-bar:vertical .track,
+.scroll-bar:horizontal .track {
+    -fx-background-color: #f0f2f5;
+    -fx-border-color: transparent;
+    -fx-background-radius: 8;
+}
+
+.scroll-bar:vertical .thumb,
+.scroll-bar:horizontal .thumb {
+    -fx-background-color: #b0bac5;
+    -fx-background-radius: 8;
+}
+
+.scroll-bar:vertical .thumb:hover,
+.scroll-bar:horizontal .thumb:hover {
+    -fx-background-color: #959ea7;
+}
+
+/* Specific Element Overrides */
+#titleText {
+    -fx-font-size: 26px;
+    -fx-padding: 0 0 15 0;
+}
+
+#elapsedTimeText {
+    -fx-font-size: 16px;
+    -fx-text-fill: -secondary-color;
+    -fx-font-weight: bold;
+    -fx-padding: 5 0;
+}
+
+#analyzerRegexLabel, #dfaRegexLabel {
+    -fx-background-color: transparent;
+    -fx-padding: 10;
 }

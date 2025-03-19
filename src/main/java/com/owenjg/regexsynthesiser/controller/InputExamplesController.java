@@ -236,7 +236,7 @@ public class InputExamplesController {
         thirdController.setValues(String.valueOf((System.currentTimeMillis() - startTime) / 1000), generatedRegex, examples);
         thirdController.setStage(stage);
 
-        Scene thirdScene = new Scene(thirdRoot, 800, 600);
+        Scene thirdScene = new Scene(thirdRoot, 850, 775);
         thirdScene.getStylesheets().add(getClass().getResource("/com/owenjg/regexsynthesiser/styles.css").toExternalForm());
 
         stage.setScene(thirdScene);

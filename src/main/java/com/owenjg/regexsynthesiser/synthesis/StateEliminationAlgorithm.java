@@ -14,8 +14,8 @@ public class StateEliminationAlgorithm {
             return "";
         }
 
-        // Get elimination order
-        List<Integer> eliminationOrder = getEliminationOrder(dfa);
+        // Get elimination order using complexity heuristic
+        List<Integer> eliminationOrder = getSmartEliminationOrder(dfa);
 
         // Eliminate states
         for (Integer state : eliminationOrder) {
@@ -23,7 +23,12 @@ public class StateEliminationAlgorithm {
         }
 
         // Get final regex
-        return getFinalRegex(dfa);
+        String regex = getFinalRegex(dfa);
+
+        // Apply additional simplification for repetitions
+        regex = simplifyRepetitions(regex);
+
+        return regex;
     }
 
     private void initializeRegexTransitions(DFA dfa) {
@@ -45,11 +50,41 @@ public class StateEliminationAlgorithm {
                 // If transition already exists, merge with OR
                 if (regexTransitions.containsKey(trans)) {
                     String existing = regexTransitions.get(trans);
-                    regexTransitions.put(trans, "(" + existing + "|" + transStr + ")");
+                    regexTransitions.put(trans, combineAlternatives(existing, transStr));
                 } else {
                     regexTransitions.put(trans, transStr);
                 }
             }
+        }
+    }
+
+    /**
+     * Combines alternative patterns more efficiently than simple concatenation
+     */
+    private String combineAlternatives(String pattern1, String pattern2) {
+        // Try to create character classes when possible
+        if (pattern1.length() == 1 && pattern2.length() == 1) {
+            char c1 = pattern1.charAt(0);
+            char c2 = pattern2.charAt(0);
+
+            // Check if both are letters or both are digits
+            boolean bothLetters = Character.isLetter(c1) && Character.isLetter(c2);
+            boolean bothDigits = Character.isDigit(c1) && Character.isDigit(c2);
+
+            if (bothLetters || bothDigits) {
+                return "[" + pattern1 + pattern2 + "]";
+            }
+        }
+
+        // Check if either pattern already contains alternatives
+        if (pattern1.startsWith("(") && pattern1.endsWith(")") && pattern1.contains("|")) {
+            // Remove outer parentheses and add new alternative
+            return "(" + pattern1.substring(1, pattern1.length() - 1) + "|" + pattern2 + ")";
+        } else if (pattern2.startsWith("(") && pattern2.endsWith(")") && pattern2.contains("|")) {
+            // Remove outer parentheses and add new alternative
+            return "(" + pattern1 + "|" + pattern2.substring(1, pattern2.length() - 1) + ")";
+        } else {
+            return "(" + pattern1 + "|" + pattern2 + ")";
         }
     }
 
@@ -85,7 +120,12 @@ public class StateEliminationAlgorithm {
 
                 String newRegex = incoming.getValue();
                 if (selfLoop != null) {
-                    newRegex += "(" + selfLoop + ")*";
+                    // Simplify self-loop expression
+                    if (selfLoop.length() == 1) {
+                        newRegex += selfLoop + "*";
+                    } else {
+                        newRegex += "(" + selfLoop + ")*";
+                    }
                 }
                 newRegex += outgoing.getValue();
 
@@ -94,7 +134,7 @@ public class StateEliminationAlgorithm {
                 // Merge or add new transition
                 if (regexTransitions.containsKey(newTrans)) {
                     String existing = regexTransitions.get(newTrans);
-                    regexTransitions.put(newTrans, "(" + existing + "|" + newRegex + ")");
+                    regexTransitions.put(newTrans, combineAlternatives(existing, newRegex));
                 } else {
                     regexTransitions.put(newTrans, newRegex);
                 }
@@ -107,7 +147,11 @@ public class StateEliminationAlgorithm {
                 StateTransition acceptingTrans = new StateTransition(incoming.getKey(), state);
                 String incomingRegex = incoming.getValue();
                 if (selfLoop != null) {
-                    incomingRegex += "(" + selfLoop + ")*";
+                    if (selfLoop.length() == 1) {
+                        incomingRegex += selfLoop + "*";
+                    } else {
+                        incomingRegex += "(" + selfLoop + ")*";
+                    }
                 }
                 regexTransitions.put(acceptingTrans, incomingRegex);
             }
@@ -135,9 +179,6 @@ public class StateEliminationAlgorithm {
             return "";
         }
 
-        // Sort patterns for consistency
-        Collections.sort(patterns);
-
         // Join patterns with OR
         String regex = String.join("|", patterns);
         // Replace ε with empty string after combination
@@ -153,26 +194,121 @@ public class StateEliminationAlgorithm {
         return patterns.size() > 1 ? "(" + regex + ")" : regex;
     }
 
-    private List<Integer> getEliminationOrder(DFA dfa) {
-        List<Integer> order = new ArrayList<>();
-        Set<Integer> states = dfa.getStates();
-        int startState = dfa.getStartState();
+    /**
+     * Smart elimination order based on transition complexity.
+     * States with fewer/simpler transitions are eliminated first.
+     */
+    private List<Integer> getSmartEliminationOrder(DFA dfa) {
+        // Create a map of states to their complexity scores
+        Map<Integer, Integer> stateComplexity = new HashMap<>();
 
-        // Add non-accepting, non-start states first
-        for (Integer state : states) {
-            if (state != startState && !dfa.isAcceptingState(state)) {
-                order.add(state);
+        // Calculate complexity for each state
+        for (Integer state : dfa.getStates()) {
+            if (state == dfa.getStartState()) {
+                // Skip start state - we eliminate it last
+                continue;
             }
+
+            // Count incoming and outgoing transitions
+            int inCount = 0;
+            int outCount = 0;
+
+            for (Map.Entry<StateTransition, String> entry : regexTransitions.entrySet()) {
+                StateTransition trans = entry.getKey();
+                if (trans.from == state) {
+                    outCount++;
+                }
+                if (trans.to == state) {
+                    inCount++;
+                }
+            }
+
+            // Complexity score based on how many new transitions would be created
+            int complexity = inCount * outCount;
+
+            // Add bonus for self-loops (they're usually easier to eliminate)
+            boolean hasSelfLoop = regexTransitions.containsKey(new StateTransition(state, state));
+            if (hasSelfLoop) {
+                complexity -= 1;
+            }
+
+            // Adjust for accepting states (prefer keeping them longer)
+            if (dfa.isAcceptingState(state)) {
+                complexity += 2;
+            }
+
+            stateComplexity.put(state, complexity);
         }
 
-        // Then add accepting states (except if start state)
-        for (Integer state : states) {
-            if (state != startState && dfa.isAcceptingState(state)) {
-                order.add(state);
-            }
-        }
+        // Sort states by complexity (lower first)
+        List<Integer> order = new ArrayList<>(stateComplexity.keySet());
+        order.sort(Comparator.comparing(stateComplexity::get));
 
         return order;
+    }
+
+    /**
+     * Apply simplification for repetitions in the regex
+     */
+    private String simplifyRepetitions(String regex) {
+        // This is a placeholder for regex-specific simplifications
+        // that are better applied at the string level
+
+        // Example: convert (a)* to a*
+        regex = regex.replaceAll("\\(([a-zA-Z0-9])\\)\\*", "$1*");
+
+        // Convert character class with single char to just the char
+        regex = regex.replaceAll("\\[([a-zA-Z0-9])\\]", "$1");
+
+        // Look for repeated groups
+        regex = simplifyRepeatedGroups(regex);
+
+        return regex;
+    }
+
+    /**
+     * Simplify patterns with repeated groups like (ab)(ab)* to (ab)+
+     */
+    private String simplifyRepeatedGroups(String regex) {
+        // This is a simplistic implementation
+        // A more comprehensive solution would use a regex parser
+
+        for (int i = 0; i < regex.length(); i++) {
+            // Find closing parenthesis
+            if (regex.charAt(i) == ')') {
+                // Look for a group that repeats itself
+                int start = findMatchingOpenParen(regex, i);
+                if (start >= 0) {
+                    String group = regex.substring(start, i + 1);
+
+                    // Check if followed by the same group with a star
+                    if (i + group.length() + 1 < regex.length() &&
+                            regex.substring(i + 1).startsWith(group + "*")) {
+                        // Replace with group+
+                        regex = regex.substring(0, start) +
+                                group + "+" +
+                                regex.substring(i + 1 + group.length() + 1);
+                    }
+                }
+            }
+        }
+
+        return regex;
+    }
+
+    private int findMatchingOpenParen(String regex, int closePos) {
+        int count = 1;
+        for (int i = closePos - 1; i >= 0; i--) {
+            if (regex.charAt(i) == ')') {
+                count++;
+            } else if (regex.charAt(i) == '(') {
+                count--;
+                if (count == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     private static class StateTransition {
