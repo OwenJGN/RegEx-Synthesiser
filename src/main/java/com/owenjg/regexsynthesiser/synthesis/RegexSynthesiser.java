@@ -1,14 +1,14 @@
 package com.owenjg.regexsynthesiser.synthesis;
 
-import com.owenjg.regexsynthesiser.dfa.DFA;
 import com.owenjg.regexsynthesiser.dfa.DFABuilder;
-import com.owenjg.regexsynthesiser.exceptions.RegexSynthesisException;
 import com.owenjg.regexsynthesiser.minimisation.DFAMinimiser;
 import com.owenjg.regexsynthesiser.simplification.RegexGeneraliser;
 import com.owenjg.regexsynthesiser.simplification.RegexSimplifier;
+import com.owenjg.regexsynthesiser.validation.RegexComparator;
+import com.owenjg.regexsynthesiser.dfa.DFA;
+import com.owenjg.regexsynthesiser.exceptions.RegexSynthesisException;
 import com.owenjg.regexsynthesiser.simplification.StateEliminationAlgorithm;
 import com.owenjg.regexsynthesiser.validation.ExampleValidator;
-import com.owenjg.regexsynthesiser.validation.RegexComparator;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;

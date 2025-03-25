@@ -1,6 +1,7 @@
 package com.owenjg.regexsynthesiser.simplification;
 
 import com.owenjg.regexsynthesiser.dfa.DFA;
+
 import java.util.*;
 
 public class StateEliminationAlgorithm {

@@ -201,16 +201,6 @@ public class DisplayRegexController {
         // Set the message
         statusText.setText(message);
     }
-    // Add this to your DisplayRegexController class
-// This will update the blue status area with metrics
-
-    /**
-     * Set the status text with metrics information.
-     *
-     * @param analyzerRegex The pattern analyzer regex
-     * @param dfaRegex The DFA-based regex
-     */
-
 
     private void parseRegexResults(String combinedRegex) {
         // Initialize default values

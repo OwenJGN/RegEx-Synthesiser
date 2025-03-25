@@ -169,8 +169,6 @@ public class DFABuilder {
                 if (entry.getValue().size() <= 1) {
                     continue;
                 }
-
-
             }
         }
     }

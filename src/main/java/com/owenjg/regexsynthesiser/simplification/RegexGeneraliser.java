@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 
 public class RegexGeneraliser {
     private static final int MIN_CHARS_FOR_PATTERN = 2;
-    private static final int MIN_REPEAT_COUNT = 2;
 
     public DFA generalizeDFA(DFA dfa) {
         DFA generalizedDFA = new DFA(dfa.getStartState());
