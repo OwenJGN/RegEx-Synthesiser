@@ -4,7 +4,9 @@ import com.owenjg.regexsynthesiser.dfa.DFA;
 import com.owenjg.regexsynthesiser.dfa.DFABuilder;
 import com.owenjg.regexsynthesiser.exceptions.RegexSynthesisException;
 import com.owenjg.regexsynthesiser.minimisation.DFAMinimiser;
+import com.owenjg.regexsynthesiser.simplification.RegexGeneraliser;
 import com.owenjg.regexsynthesiser.simplification.RegexSimplifier;
+import com.owenjg.regexsynthesiser.simplification.StateEliminationAlgorithm;
 import com.owenjg.regexsynthesiser.validation.ExampleValidator;
 import com.owenjg.regexsynthesiser.validation.RegexComparator;
 import javafx.application.Platform;
@@ -20,13 +22,13 @@ public class RegexSynthesiser {
     private final StateEliminationAlgorithm stateElimination;
     private final RegexSimplifier regexSimplifier;
     private final ExampleValidator exampleValidator;
-    private final RegexGeneralizer patternGeneralizer;
+    private final RegexGeneraliser patternGeneralizer;
     private final DFABuilder dfaBuilder;
     private final RegexComparator regexComparator;
     private List<String> positiveExamples;
     private List<String> negativeExamples;
 
-    private final PatternAnalyzer patternAnalyzer;
+    private final PatternAnalyser patternAnalyser;
     @FXML
     private Label currentStatusLabel;
 
@@ -36,8 +38,8 @@ public class RegexSynthesiser {
         this.positiveExamples = new ArrayList<>();
         this.negativeExamples = new ArrayList<>();
         this.dfaBuilder = new DFABuilder();
-        this.patternAnalyzer = new PatternAnalyzer();
-        this.patternGeneralizer = new RegexGeneralizer();
+        this.patternAnalyser = new PatternAnalyser();
+        this.patternGeneralizer = new RegexGeneraliser();
         this.dfaMinimiser = new DFAMinimiser();
         this.stateElimination = new StateEliminationAlgorithm();
         this.regexSimplifier = new RegexSimplifier();
@@ -121,7 +123,7 @@ public class RegexSynthesiser {
 
     private String createRegexFromAnalyser() {
         updateStatus("Analyzing patterns in examples...");
-        String regex = patternAnalyzer.generalizePattern(positiveExamples, negativeExamples);
+        String regex = patternAnalyser.generalizePattern(positiveExamples, negativeExamples);
         System.out.println("Initial pattern analyzer result: " + regex);
 
         String simplifiedRegex = RegexSimplifier.simplify(regex);

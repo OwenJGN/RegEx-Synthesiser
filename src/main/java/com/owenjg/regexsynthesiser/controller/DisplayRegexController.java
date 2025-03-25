@@ -1,6 +1,6 @@
 package com.owenjg.regexsynthesiser.controller;
 
-import com.owenjg.regexsynthesiser.synthesis.Examples;
+import com.owenjg.regexsynthesiser.validation.Examples;
 import com.owenjg.regexsynthesiser.validation.RegexComparator;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

@@ -1,10 +1,10 @@
-package com.owenjg.regexsynthesiser.synthesis;
+package com.owenjg.regexsynthesiser.simplification;
 
 import com.owenjg.regexsynthesiser.dfa.DFA;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class RegexGeneralizer {
+public class RegexGeneraliser {
     private static final int MIN_CHARS_FOR_PATTERN = 2;
     private static final int MIN_REPEAT_COUNT = 2;
 

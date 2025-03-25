@@ -1,4 +1,4 @@
-package com.owenjg.regexsynthesiser.synthesis;
+package com.owenjg.regexsynthesiser.validation;
 
 import java.io.File;
 import java.io.FileNotFoundException;

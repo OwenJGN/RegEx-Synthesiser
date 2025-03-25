@@ -1,11 +1,9 @@
 package com.owenjg.regexsynthesiser;
 
-import com.owenjg.regexsynthesiser.synthesis.Examples;
+import com.owenjg.regexsynthesiser.validation.Examples;
 import com.owenjg.regexsynthesiser.synthesis.RegexSynthesiser;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 

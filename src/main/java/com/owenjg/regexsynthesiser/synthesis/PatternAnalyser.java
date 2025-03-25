@@ -1,13 +1,11 @@
 package com.owenjg.regexsynthesiser.synthesis;
 
-import com.owenjg.regexsynthesiser.dfa.DFA;
 import java.util.*;
 
 
-import java.util.*;
 import java.util.stream.Collectors;
 
-public class PatternAnalyzer {
+public class PatternAnalyser {
     public String generalizePattern(List<String> positiveExamples, List<String> negativeExamples) {
         // First try the original pattern
         String initialPattern = generalizeFromPositive(positiveExamples);
