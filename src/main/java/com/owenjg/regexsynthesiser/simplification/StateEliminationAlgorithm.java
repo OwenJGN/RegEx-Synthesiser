@@ -1,11 +1,11 @@
 package com.owenjg.regexsynthesiser.simplification;
 
 import com.owenjg.regexsynthesiser.dfa.DFA;
-
 import java.util.*;
 
 public class StateEliminationAlgorithm {
     private Map<StateTransition, String> regexTransitions = new HashMap<>();
+    private static final String REGEX_METACHARACTERS = ".[{()*+?^$|\\";
 
     public String eliminateStates(DFA dfa) {
         // Initialize transitions
@@ -46,7 +46,7 @@ public class StateEliminationAlgorithm {
                 int to = transition.getValue();
 
                 StateTransition trans = new StateTransition(from, to);
-                String transStr = String.valueOf(symbol);
+                String transStr = escapeSpecialCharacters(symbol);
 
                 // If transition already exists, merge with OR
                 if (regexTransitions.containsKey(trans)) {
@@ -60,13 +60,23 @@ public class StateEliminationAlgorithm {
     }
 
     /**
+     * Escapes special regex metacharacters to ensure they're treated as literals
+     */
+    private String escapeSpecialCharacters(char symbol) {
+        if (REGEX_METACHARACTERS.indexOf(symbol) >= 0) {
+            return "\\" + symbol;
+        }
+        return String.valueOf(symbol);
+    }
+
+    /**
      * Combines alternative patterns more efficiently than simple concatenation
      */
     private String combineAlternatives(String pattern1, String pattern2) {
         // Try to create character classes when possible
-        if (pattern1.length() == 1 && pattern2.length() == 1) {
-            char c1 = pattern1.charAt(0);
-            char c2 = pattern2.charAt(0);
+        if (isLiteralCharacter(pattern1) && isLiteralCharacter(pattern2)) {
+            char c1 = getUnescapedChar(pattern1);
+            char c2 = getUnescapedChar(pattern2);
 
             // Check if both are letters or both are digits
             boolean bothLetters = Character.isLetter(c1) && Character.isLetter(c2);
@@ -87,6 +97,20 @@ public class StateEliminationAlgorithm {
         } else {
             return "(" + pattern1 + "|" + pattern2 + ")";
         }
+    }
+
+    /**
+     * Check if a pattern is a single literal character (escaped or not)
+     */
+    private boolean isLiteralCharacter(String pattern) {
+        return pattern.length() == 1 || (pattern.length() == 2 && pattern.charAt(0) == '\\');
+    }
+
+    /**
+     * Get the character from a possibly escaped sequence
+     */
+    private char getUnescapedChar(String pattern) {
+        return pattern.length() == 1 ? pattern.charAt(0) : pattern.charAt(1);
     }
 
     private void eliminateState(DFA dfa, int state) {
@@ -122,7 +146,7 @@ public class StateEliminationAlgorithm {
                 String newRegex = incoming.getValue();
                 if (selfLoop != null) {
                     // Simplify self-loop expression
-                    if (selfLoop.length() == 1) {
+                    if (isLiteralCharacter(selfLoop)) {
                         newRegex += selfLoop + "*";
                     } else {
                         newRegex += "(" + selfLoop + ")*";
@@ -148,7 +172,7 @@ public class StateEliminationAlgorithm {
                 StateTransition acceptingTrans = new StateTransition(incoming.getKey(), state);
                 String incomingRegex = incoming.getValue();
                 if (selfLoop != null) {
-                    if (selfLoop.length() == 1) {
+                    if (isLiteralCharacter(selfLoop)) {
                         incomingRegex += selfLoop + "*";
                     } else {
                         incomingRegex += "(" + selfLoop + ")*";
@@ -256,7 +280,7 @@ public class StateEliminationAlgorithm {
         // that are better applied at the string level
 
         // Example: convert (a)* to a*
-        regex = regex.replaceAll("\\(([a-zA-Z0-9])\\)\\*", "$1*");
+        regex = regex.replaceAll("\\(([^|)(]+)\\)\\*", "$1*");
 
         // Convert character class with single char to just the char
         regex = regex.replaceAll("\\[([a-zA-Z0-9])\\]", "$1");

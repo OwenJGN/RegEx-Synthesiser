@@ -20,7 +20,7 @@
 
     <!-- Pattern Analyzer Regex -->
     <VBox spacing="10" styleClass="regex-container">
-        <Label styleClass="subtitle" text="Pattern Analyzer:"/>
+        <Label styleClass="subtitle" text="Pattern Analyser:"/>
         <StackPane styleClass="regex-display-container" minHeight="100">
             <ScrollPane fitToWidth="true" styleClass="regex-scroll-pane">
                 <VBox>

@@ -83,33 +83,21 @@ public class RegexSynthesiser {
             System.out.println("Pattern Analyzer regex valid: " + analyzerValid);
             System.out.println("DFA-based regex valid: " + dfaValid);
 
-            // Compare the regexes if both are valid
-            if (analyzerValid && dfaValid) {
-                updateStatus("Comparing regex patterns...");
-                String comparison = RegexComparator.compareRegexes(analyzerRegex, dfaRegex);
-                System.out.println(comparison);
-
-                // Update the UI with comparison info
-                if (progressCallback != null) {
-                    progressCallback.onComplete(comparison);
-                }
-            } else {
-                // Format a simple string containing both regexes and validation results only
-                StringBuilder resultsBuilder = new StringBuilder();
-                resultsBuilder.append("GENERATED REGEXES\n\n");
-
-                if (progressCallback != null) {
-                    progressCallback.onComplete(resultsBuilder.toString());
-                }
-
-                // Log any validation issues
-                if (!analyzerValid && !dfaValid) {
-                    System.out.println("Warning: Generated regexes failed validation");
-                    if (progressCallback != null) {
-                        progressCallback.onError("Both approaches failed to generate a valid regex");
-                    }
-                }
+            if(!analyzerValid){
+                analyzerRegex = "INVALID: " + analyzerRegex;
             }
+            if(!dfaValid){
+                dfaRegex = "INVALID: "+ dfaRegex;
+            }
+
+            String comparison = RegexComparator.compareRegexes(analyzerRegex, dfaRegex);
+            updateStatus("Comparing regex patterns....");
+
+            // Update the UI with comparison info
+            if (progressCallback != null) {
+                progressCallback.onComplete(comparison);
+            }
+
 
             updateStatus("Synthesis complete!");
         } catch (Exception e) {
