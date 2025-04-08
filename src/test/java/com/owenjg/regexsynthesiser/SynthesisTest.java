@@ -33,7 +33,7 @@ public class SynthesisTest {
         List<String> positiveExamples = Arrays.asList("abc", "abd", "abe");
         List<String> negativeExamples = Arrays.asList("acb", "adc", "xyz");
 
-        String regex = patternAnalyser.generalizePattern(positiveExamples, negativeExamples);
+        String regex = patternAnalyser.generalisePattern(positiveExamples, negativeExamples);
 
         // Verify pattern is correct
         assertTrue(validator.validateExamples(regex, positiveExamples, negativeExamples));
@@ -44,7 +44,7 @@ public class SynthesisTest {
         List<String> positiveExamples = Arrays.asList("a1", "b2", "c3", "d4");
         List<String> negativeExamples = Arrays.asList("1a", "2b", "aa", "11");
 
-        String regex = patternAnalyser.generalizePattern(positiveExamples, negativeExamples);
+        String regex = patternAnalyser.generalisePattern(positiveExamples, negativeExamples);
 
         // Verify pattern is correct
         assertTrue(validator.validateExamples(regex, positiveExamples, negativeExamples));
@@ -55,7 +55,7 @@ public class SynthesisTest {
         List<String> positiveExamples = Arrays.asList("");
         List<String> negativeExamples = Arrays.asList("a", "b", "ab");
 
-        String regex = patternAnalyser.generalizePattern(positiveExamples, negativeExamples);
+        String regex = patternAnalyser.generalisePattern(positiveExamples, negativeExamples);
 
         // Verify pattern is correct
         assertTrue(validator.validateExamples(regex, positiveExamples, negativeExamples));
@@ -114,7 +114,7 @@ public class SynthesisTest {
 
         // Verify that the returned regex contains both pattern types
         String result = resultRegex.get();
-        assertTrue(result.contains("Pattern Analyzer:") && result.contains("DFA-based:"),
+        assertTrue(result.contains("Pattern Analyser:") && result.contains("DFA-based:"),
                 "Result should contain both regex types");
     }
 
@@ -153,7 +153,7 @@ public class SynthesisTest {
         List<String> positiveExamples = Arrays.asList("test123end", "test456end", "test789end");
         List<String> negativeExamples = Collections.emptyList();
 
-        String regex = patternAnalyser.generalizePattern(positiveExamples, negativeExamples);
+        String regex = patternAnalyser.generalisePattern(positiveExamples, negativeExamples);
 
         // Should identify the common prefix and suffix
         assertTrue(regex.startsWith("test"));
@@ -165,7 +165,7 @@ public class SynthesisTest {
             List<String> positiveExamples = Arrays.asList("prefix123suffix", "prefix456suffix", "prefix789suffix");
         List<String> negativeExamples = Arrays.asList("notprefix123suffix", "prefix123", "123suffix");
 
-        String regex = patternAnalyser.generalizePattern(positiveExamples, negativeExamples);
+        String regex = patternAnalyser.generalisePattern(positiveExamples, negativeExamples);
 
         // Verify pattern is correct
         assertTrue(validator.validateExamples(regex, positiveExamples, negativeExamples));

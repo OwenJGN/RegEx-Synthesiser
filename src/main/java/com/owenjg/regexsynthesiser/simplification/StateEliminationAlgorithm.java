@@ -3,13 +3,27 @@ package com.owenjg.regexsynthesiser.simplification;
 import com.owenjg.regexsynthesiser.dfa.DFA;
 import java.util.*;
 
+/**
+ * Converts a Deterministic Finite Automaton (DFA) to a regular expression
+ * using the state elimination algorithm.
+ *
+ * This class systematically removes states from the DFA, preserving its language,
+ * until only the initial and accepting states remain. The transitions between these
+ * states are then combined to form the final regular expression.
+ */
 public class StateEliminationAlgorithm {
     private Map<StateTransition, String> regexTransitions = new HashMap<>();
     private static final String REGEX_METACHARACTERS = ".[{()*+?^$|\\";
 
+    /**
+     * Eliminates states from a DFA and produces an equivalent regular expression.
+     *
+     * @param dfa The DFA to convert to a regular expression
+     * @return A regular expression equivalent to the language accepted by the DFA
+     */
     public String eliminateStates(DFA dfa) {
-        // Initialize transitions
-        initializeRegexTransitions(dfa);
+        // Initialise transitions
+        initialiseRegexTransitions(dfa);
 
         if (regexTransitions.isEmpty()) {
             return "";
@@ -32,7 +46,12 @@ public class StateEliminationAlgorithm {
         return regex;
     }
 
-    private void initializeRegexTransitions(DFA dfa) {
+    /**
+     * Initialises the regex transitions map from DFA transitions.
+     *
+     * @param dfa The DFA to initialise transitions from
+     */
+    private void initialiseRegexTransitions(DFA dfa) {
         regexTransitions.clear();
 
         // Get all transitions from DFA
@@ -60,7 +79,10 @@ public class StateEliminationAlgorithm {
     }
 
     /**
-     * Escapes special regex metacharacters to ensure they're treated as literals
+     * Escapes special regex metacharacters to ensure they're treated as literals.
+     *
+     * @param symbol The character to potentially escape
+     * @return The escaped character if it's a metacharacter, otherwise the original character
      */
     private String escapeSpecialCharacters(char symbol) {
         if (REGEX_METACHARACTERS.indexOf(symbol) >= 0) {
@@ -70,7 +92,12 @@ public class StateEliminationAlgorithm {
     }
 
     /**
-     * Combines alternative patterns more efficiently than simple concatenation
+     * Combines alternative patterns more efficiently than simple concatenation.
+     * Attempts to create character classes when appropriate.
+     *
+     * @param pattern1 The first pattern to combine
+     * @param pattern2 The second pattern to combine
+     * @return A combined pattern representing alternatives
      */
     private String combineAlternatives(String pattern1, String pattern2) {
         // Try to create character classes when possible
@@ -100,19 +127,31 @@ public class StateEliminationAlgorithm {
     }
 
     /**
-     * Check if a pattern is a single literal character (escaped or not)
+     * Checks if a pattern is a single literal character (escaped or not).
+     *
+     * @param pattern The pattern to check
+     * @return true if the pattern is a single character, false otherwise
      */
     private boolean isLiteralCharacter(String pattern) {
         return pattern.length() == 1 || (pattern.length() == 2 && pattern.charAt(0) == '\\');
     }
 
     /**
-     * Get the character from a possibly escaped sequence
+     * Gets the character from a possibly escaped sequence.
+     *
+     * @param pattern The pattern containing a possibly escaped character
+     * @return The unescaped character
      */
     private char getUnescapedChar(String pattern) {
         return pattern.length() == 1 ? pattern.charAt(0) : pattern.charAt(1);
     }
 
+    /**
+     * Eliminates a state from the DFA by creating bypass transitions.
+     *
+     * @param dfa The DFA being processed
+     * @param state The state to eliminate
+     */
     private void eliminateState(DFA dfa, int state) {
         // Create maps for incoming and outgoing transitions
         Map<Integer, String> incomingTransitions = new HashMap<>();
@@ -183,6 +222,12 @@ public class StateEliminationAlgorithm {
         }
     }
 
+    /**
+     * Constructs the final regular expression from the remaining transitions.
+     *
+     * @param dfa The DFA being processed
+     * @return The final regular expression
+     */
     private String getFinalRegex(DFA dfa) {
         List<String> patterns = new ArrayList<>();
         int startState = dfa.getStartState();
@@ -220,8 +265,11 @@ public class StateEliminationAlgorithm {
     }
 
     /**
-     * Smart elimination order based on transition complexity.
+     * Determines a smart elimination order based on transition complexity.
      * States with fewer/simpler transitions are eliminated first.
+     *
+     * @param dfa The DFA being processed
+     * @return A list of states in the order they should be eliminated
      */
     private List<Integer> getSmartEliminationOrder(DFA dfa) {
         // Create a map of states to their complexity scores
@@ -273,13 +321,13 @@ public class StateEliminationAlgorithm {
     }
 
     /**
-     * Apply simplification for repetitions in the regex
+     * Applies simplification for repetitions in the regex.
+     *
+     * @param regex The regex to simplify
+     * @return The simplified regex
      */
     private String simplifyRepetitions(String regex) {
-        // This is a placeholder for regex-specific simplifications
-        // that are better applied at the string level
-
-        // Example: convert (a)* to a*
+        // Convert (a)* to a*
         regex = regex.replaceAll("\\(([^|)(]+)\\)\\*", "$1*");
 
         // Convert character class with single char to just the char
@@ -292,11 +340,12 @@ public class StateEliminationAlgorithm {
     }
 
     /**
-     * Simplify patterns with repeated groups like (ab)(ab)* to (ab)+
+     * Simplifies patterns with repeated groups like (ab)(ab)* to (ab)+.
+     *
+     * @param regex The regex to simplify
+     * @return The simplified regex
      */
     private String simplifyRepeatedGroups(String regex) {
-        // This is a simplistic implementation
-        // A more comprehensive solution would use a regex parser
 
         for (int i = 0; i < regex.length(); i++) {
             // Find closing parenthesis
@@ -321,6 +370,13 @@ public class StateEliminationAlgorithm {
         return regex;
     }
 
+    /**
+     * Finds the matching opening parenthesis for a closing one.
+     *
+     * @param regex The regex string
+     * @param closePos The position of the closing parenthesis
+     * @return The position of the matching opening parenthesis, or -1 if not found
+     */
     private int findMatchingOpenParen(String regex, int closePos) {
         int count = 1;
         for (int i = closePos - 1; i >= 0; i--) {
@@ -336,10 +392,19 @@ public class StateEliminationAlgorithm {
         return -1;
     }
 
+    /**
+     * Represents a transition between two states in the DFA.
+     */
     private static class StateTransition {
         final int from;
         final int to;
 
+        /**
+         * Creates a new state transition.
+         *
+         * @param from The source state
+         * @param to The destination state
+         */
         StateTransition(int from, int to) {
             this.from = from;
             this.to = to;

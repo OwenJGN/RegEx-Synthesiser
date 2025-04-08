@@ -1,24 +1,41 @@
 package com.owenjg.regexsynthesiser.synthesis;
 
 import java.util.*;
-
-
 import java.util.stream.Collectors;
 
+/**
+ * The PatternAnalyser class analyses input examples and generates regular expressions
+ * that match positive examples while excluding negative examples.
+ * It uses a variety of pattern recognition techniques to create optimal regex patterns.
+ */
 public class PatternAnalyser {
-    public String generalizePattern(List<String> positiveExamples, List<String> negativeExamples) {
-        // First try the original pattern
-        String initialPattern = generalizeFromPositive(positiveExamples);
+    /**
+     * Generates a regular expression pattern that matches all positive examples
+     * and excludes all negative examples.
+     *
+     * @param positiveExamples List of strings that should match the pattern
+     * @param negativeExamples List of strings that should not match the pattern
+     * @return A regular expression that satisfies the given examples
+     */
+    public String generalisePattern(List<String> positiveExamples, List<String> negativeExamples) {
+        // First try the original pattern based only on positive examples
+        String initialPattern = generaliseFromPositive(positiveExamples);
 
         // Check if it already excludes all negative examples
         if (negativeExamples.isEmpty() || isPatternValid(initialPattern, positiveExamples, negativeExamples)) {
             return initialPattern;
         }
 
-        // If not, refine the pattern
+        // If not, refine the pattern to handle negative examples
         return refinePattern(initialPattern, positiveExamples, negativeExamples);
     }
 
+    /**
+     * Finds the longest common prefix shared by all example strings.
+     *
+     * @param examples List of strings to analyse
+     * @return The common prefix or empty string if none exists
+     */
     private String findCommonPrefix(List<String> examples) {
         if (examples.isEmpty()) return "";
 
@@ -38,9 +55,16 @@ public class PatternAnalyser {
         return prefix.toString();
     }
 
+    /**
+     * Finds the longest common suffix shared by all example strings.
+     *
+     * @param examples List of strings to analyse
+     * @return The common suffix or empty string if none exists
+     */
     private String findCommonSuffix(List<String> examples) {
         if (examples.isEmpty()) return "";
 
+        // Reverse all strings and find their common prefix, then reverse the result
         List<String> reversed = examples.stream()
                 .map(s -> new StringBuilder(s).reverse().toString())
                 .collect(Collectors.toList());
@@ -48,7 +72,14 @@ public class PatternAnalyser {
         return new StringBuilder(findCommonPrefix(reversed)).reverse().toString();
     }
 
-    private String analyzeMiddlePattern(List<String> examples) {
+    /**
+     * Analyses the middle pattern after removing common prefix and suffix.
+     * This is the core pattern recognition algorithm that handles various cases.
+     *
+     * @param examples List of strings to analyse (with prefix/suffix removed)
+     * @return A regex pattern for the middle section
+     */
+    private String analyseMiddlePattern(List<String> examples) {
         if (examples.isEmpty() || examples.stream().allMatch(String::isEmpty)) {
             return "";
         }
@@ -89,7 +120,7 @@ public class PatternAnalyser {
                     Set<Character> chars = examples.stream()
                             .map(s -> s.charAt(finalPos))
                             .collect(Collectors.toSet());
-                    pattern.append(generalizeCharacterClass(chars));
+                    pattern.append(generaliseCharacterClass(chars));
 
                     lastPos = pos + 1;
                 }
@@ -102,7 +133,7 @@ public class PatternAnalyser {
                 return pattern.toString();
             }
 
-            return analyzeFixedLengthPattern(examples);
+            return analyseFixedLengthPattern(examples);
         }
 
         // Check for optional repeating pattern
@@ -118,14 +149,22 @@ public class PatternAnalyser {
         }
 
         // Check for variable length patterns
-        String variablePattern = analyzeVariableLengthPattern(examples);
+        String variablePattern = analyseVariableLengthPattern(examples);
         if (variablePattern != null) {
             return variablePattern;
         }
 
-        // If no clear pattern, analyze as complex pattern
-        return analyzeComplexPattern(examples);
+        // If no clear pattern, analyse as complex pattern
+        return analyseComplexPattern(examples);
     }
+
+    /**
+     * Detects optional repeating patterns, such as characters that may appear
+     * zero or more times in the examples.
+     *
+     * @param examples List of strings to analyse
+     * @return A regex pattern for optional repetition or null if none found
+     */
     private String findOptionalRepeatingPattern(List<String> examples) {
         // If any string is empty, we might have an optional pattern
         boolean hasEmpty = examples.stream().anyMatch(String::isEmpty);
@@ -150,6 +189,14 @@ public class PatternAnalyser {
 
         return null;
     }
+
+    /**
+     * Detects repeating patterns in the examples, such as sequences that
+     * repeat one or more times.
+     *
+     * @param examples List of strings to analyse
+     * @return A regex pattern for repetition or null if none found
+     */
     private String findRepeatingPattern(List<String> examples) {
         // Find the shortest example to use as potential pattern
         String shortest = examples.stream()
@@ -188,7 +235,14 @@ public class PatternAnalyser {
         return null;
     }
 
-    private String analyzeFixedLengthPattern(List<String> examples) {
+    /**
+     * Analyses patterns where all examples have the same length.
+     * Creates character classes at each position where needed.
+     *
+     * @param examples List of fixed-length strings to analyse
+     * @return A regex pattern for fixed-length strings
+     */
+    private String analyseFixedLengthPattern(List<String> examples) {
         StringBuilder pattern = new StringBuilder();
         int length = examples.get(0).length();
 
@@ -198,20 +252,27 @@ public class PatternAnalyser {
                     .map(s -> s.charAt(finalI))
                     .collect(Collectors.toSet());
 
-            pattern.append(generalizeCharacterClass(chars));
+            pattern.append(generaliseCharacterClass(chars));
         }
 
         return pattern.toString();
     }
 
-    private String analyzeVariableLengthPattern(List<String> examples) {
+    /**
+     * Analyses patterns where examples have variable lengths.
+     * Attempts to find a common character class that applies to all.
+     *
+     * @param examples List of variable-length strings to analyse
+     * @return A regex pattern for variable-length strings or null if no pattern found
+     */
+    private String analyseVariableLengthPattern(List<String> examples) {
         // Get all unique characters across all strings
         Set<Character> allChars = examples.stream()
                 .flatMap(s -> s.chars().mapToObj(c -> (char)c))
                 .collect(Collectors.toSet());
 
         // Check if all characters are of same type
-        String charClassPattern = generalizeCharacterClass(allChars);
+        String charClassPattern = generaliseCharacterClass(allChars);
         if (!charClassPattern.startsWith("[") || charClassPattern.length() <= 3) {
             return charClassPattern + "+";
         }
@@ -219,19 +280,26 @@ public class PatternAnalyser {
         return null;
     }
 
-    private String analyzeComplexPattern(List<String> examples) {
+    /**
+     * Handles complex patterns that don't fit simpler categories.
+     * This is a fallback method for when other pattern recognition fails.
+     *
+     * @param examples List of strings to analyse
+     * @return A regex pattern that covers the complex patterns
+     */
+    private String analyseComplexPattern(List<String> examples) {
         // Group similar strings
         Map<Integer, List<String>> lengthGroups = examples.stream()
                 .collect(Collectors.groupingBy(String::length));
 
         if (lengthGroups.size() == 1) {
-            return analyzeFixedLengthPattern(examples);
+            return analyseFixedLengthPattern(examples);
         }
 
         // Try to find character class patterns within groups
         List<String> patterns = new ArrayList<>();
         for (List<String> group : lengthGroups.values()) {
-            String groupPattern = analyzeFixedLengthPattern(group);
+            String groupPattern = analyseFixedLengthPattern(group);
             if (!patterns.contains(groupPattern)) {
                 patterns.add(groupPattern);
             }
@@ -249,7 +317,7 @@ public class PatternAnalyser {
                 .flatMap(s -> s.chars().mapToObj(c -> (char)c))
                 .collect(Collectors.toSet());
 
-        String charClass = generalizeCharacterClass(allChars);
+        String charClass = generaliseCharacterClass(allChars);
         if (!charClass.equals(examples.get(0))) {
             return charClass + "+";
         }
@@ -257,21 +325,41 @@ public class PatternAnalyser {
         // Last resort: alternation
         return "(" + examples.stream().distinct().collect(Collectors.joining("|")) + ")";
     }
-    private String generalizeFromPositive(List<String> examples) {
-        // Original generalization logic for positive examples
+
+    /**
+     * Generates a regex pattern from positive examples by finding
+     * common prefixes, suffixes, and analysing the middle pattern.
+     *
+     * @param examples List of positive examples
+     * @return A regex pattern that matches the positive examples
+     */
+    private String generaliseFromPositive(List<String> examples) {
+        // Find common prefix among all examples
         String commonPrefix = findCommonPrefix(examples);
         List<String> withoutPrefix = examples.stream()
                 .map(s -> s.substring(commonPrefix.length()))
                 .collect(Collectors.toList());
 
+        // Find common suffix in the remainder
         String commonSuffix = findCommonSuffix(withoutPrefix);
         List<String> middle = withoutPrefix.stream()
                 .map(s -> s.substring(0, s.length() - commonSuffix.length()))
                 .collect(Collectors.toList());
 
-        String middlePattern = analyzeMiddlePattern(middle);
+        // Analyse the middle pattern after removing prefix and suffix
+        String middlePattern = analyseMiddlePattern(middle);
         return commonPrefix + middlePattern + commonSuffix;
     }
+
+    /**
+     * Refines a regex pattern to ensure it excludes negative examples
+     * while still matching all positive examples.
+     *
+     * @param initialPattern The pattern generated from positive examples
+     * @param positiveExamples List of strings that should match
+     * @param negativeExamples List of strings that should not match
+     * @return A refined regex pattern
+     */
     private String refinePattern(String initialPattern, List<String> positiveExamples, List<String> negativeExamples) {
         // Strategy 1: Try to make character classes more specific
         String refinedPattern = refineCharacterClasses(initialPattern, positiveExamples, negativeExamples);
@@ -288,6 +376,16 @@ public class PatternAnalyser {
         // Strategy 3: Convert to alternation if needed
         return createAlternationPattern(positiveExamples, negativeExamples);
     }
+
+    /**
+     * Refines character classes in a pattern to make them more specific
+     * based on actual characters in positive and negative examples.
+     *
+     * @param pattern The initial regex pattern
+     * @param positiveExamples List of strings that should match
+     * @param negativeExamples List of strings that should not match
+     * @return A refined regex pattern with more specific character classes
+     */
     private String refineCharacterClasses(String pattern, List<String> positiveExamples, List<String> negativeExamples) {
         // Replace generic character classes with more specific ones
         Map<String, Set<Character>> actualChars = new HashMap<>();
@@ -316,15 +414,25 @@ public class PatternAnalyser {
         // Replace \w, \d, [a-z], etc. with specific character classes
         String refined = pattern;
         for (Map.Entry<String, Set<Character>> entry : actualChars.entrySet()) {
-            refined = refined.replace("\\w", generalizeCharacterClass(entry.getValue()))
-                    .replace("\\d", generalizeCharacterClass(entry.getValue()))
-                    .replace("[a-z]", generalizeCharacterClass(entry.getValue()))
-                    .replace("[A-Z]", generalizeCharacterClass(entry.getValue()))
-                    .replace("[a-zA-Z]", generalizeCharacterClass(entry.getValue()));
+            refined = refined.replace("\\w", generaliseCharacterClass(entry.getValue()))
+                    .replace("\\d", generaliseCharacterClass(entry.getValue()))
+                    .replace("[a-z]", generaliseCharacterClass(entry.getValue()))
+                    .replace("[A-Z]", generaliseCharacterClass(entry.getValue()))
+                    .replace("[a-zA-Z]", generaliseCharacterClass(entry.getValue()));
         }
 
         return refined;
     }
+
+    /**
+     * Adds length constraints to a pattern to exclude negative examples
+     * that differ in length from positive examples.
+     *
+     * @param pattern The initial regex pattern
+     * @param positiveExamples List of strings that should match
+     * @param negativeExamples List of strings that should not match
+     * @return A refined regex pattern with length constraints
+     */
     private String addLengthConstraints(String pattern, List<String> positiveExamples, List<String> negativeExamples) {
         int minLength = positiveExamples.stream().mapToInt(String::length).min().orElse(0);
         int maxLength = positiveExamples.stream().mapToInt(String::length).max().orElse(0);
@@ -343,6 +451,15 @@ public class PatternAnalyser {
 
         return pattern;
     }
+
+    /**
+     * Creates an alternation pattern as a last resort when other strategies fail.
+     * This creates a pattern with specific alternatives for each length group.
+     *
+     * @param positiveExamples List of strings that should match
+     * @param negativeExamples List of strings that should not match
+     * @return A regex pattern using alternation
+     */
     private String createAlternationPattern(List<String> positiveExamples, List<String> negativeExamples) {
         // Group positive examples by length
         Map<Integer, List<String>> lengthGroups = positiveExamples.stream()
@@ -351,7 +468,7 @@ public class PatternAnalyser {
         // Create patterns for each length group
         List<String> patterns = new ArrayList<>();
         for (Map.Entry<Integer, List<String>> entry : lengthGroups.entrySet()) {
-            String groupPattern = analyzeFixedLengthPattern(entry.getValue());
+            String groupPattern = analyseFixedLengthPattern(entry.getValue());
             patterns.add(groupPattern);
         }
 
@@ -359,6 +476,15 @@ public class PatternAnalyser {
         return "(" + String.join("|", patterns) + ")";
     }
 
+    /**
+     * Validates if a pattern correctly matches all positive examples
+     * and excludes all negative examples.
+     *
+     * @param pattern The regex pattern to validate
+     * @param positiveExamples List of strings that should match
+     * @param negativeExamples List of strings that should not match
+     * @return True if the pattern is valid, false otherwise
+     */
     private boolean isPatternValid(String pattern, List<String> positiveExamples, List<String> negativeExamples) {
         try {
             // Convert pattern to regex
@@ -377,7 +503,15 @@ public class PatternAnalyser {
             return false;
         }
     }
-    private String generalizeCharacterClass(Set<Character> chars) {
+
+    /**
+     * Creates an appropriate character class based on a set of characters.
+     * Optimises by using predefined classes like \d, [a-z], etc. when possible.
+     *
+     * @param chars Set of characters to generalise
+     * @return A regex character class or single character if only one
+     */
+    private String generaliseCharacterClass(Set<Character> chars) {
         if (chars.size() == 1) {
             return String.valueOf(chars.iterator().next());
         }
@@ -404,5 +538,4 @@ public class PatternAnalyser {
                 .sorted()
                 .collect(Collectors.joining()) + "]";
     }
-
 }

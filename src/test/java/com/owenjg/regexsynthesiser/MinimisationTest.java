@@ -28,7 +28,7 @@ public class MinimisationTest {
         dfa.addTransition(2, 'b', 2);
         dfa.addAcceptingState(1);
 
-        DFA minimised = minimiser.minimizeDFA(dfa);
+        DFA minimised = minimiser.minimiseDFA(dfa);
 
 
         // Should preserve start state is 0 (implementation dependent)
@@ -66,7 +66,7 @@ public class MinimisationTest {
         dfa.addAcceptingState(1);
         dfa.addAcceptingState(3);
 
-        DFA minimised = minimiser.minimizeDFA(dfa);
+        DFA minimised = minimiser.minimiseDFA(dfa);
 
         // The minimised DFA should have fewer states (3 instead of 5)
         assertTrue(minimised.getNumStates() <= 3);
@@ -94,7 +94,7 @@ public class MinimisationTest {
 
         dfa.addAcceptingState(1);
 
-        DFA minimised = minimiser.minimizeDFA(dfa);
+        DFA minimised = minimiser.minimiseDFA(dfa);
 
 
         // Test language equivalence for positive cases
@@ -116,7 +116,7 @@ public class MinimisationTest {
         // Add at least one accepting state to avoid empty partition
         dfa.addAcceptingState(0);
 
-        DFA minimised = minimiser.minimizeDFA(dfa);
+        DFA minimised = minimiser.minimiseDFA(dfa);
 
         // Should still have at least the start state
         assertTrue(minimised.getNumStates() >= 1);
@@ -134,7 +134,7 @@ public class MinimisationTest {
         // Add a transition to handle empty partitions
         dfa.addTransition(0, 'a', 0);
 
-        DFA minimised = minimiser.minimizeDFA(dfa);
+        DFA minimised = minimiser.minimiseDFA(dfa);
 
         // Should preserve accepting start state
         assertTrue(minimised.isAcceptingState(minimised.getStartState()));

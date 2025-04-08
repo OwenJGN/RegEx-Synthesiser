@@ -42,7 +42,7 @@ public class DFATest {
         dfa.addAcceptingState(1);
         dfa.addAcceptingState(2);
 
-        // Test accepting states are recognized
+        // Test accepting states are recognised
         assertTrue(dfa.isAcceptingState(1));
         assertTrue(dfa.isAcceptingState(2));
         assertFalse(dfa.isAcceptingState(0));

@@ -4,14 +4,27 @@ import com.owenjg.regexsynthesiser.dfa.DFA;
 
 import java.util.*;
 
+/**
+ * Implements DFA minimisation using Hopcroft's algorithm.
+ * This class reduces the number of states in a DFA while preserving
+ * the language it recognises, producing an equivalent minimal DFA.
+ */
 public class DFAMinimiser {
-    public DFA minimizeDFA(DFA dfa) {
+
+    /**
+     * Minimises a DFA by combining equivalent states.
+     * This implementation uses a partition refinement approach based on Hopcroft's algorithm.
+     *
+     * @param dfa The DFA to minimise
+     * @return A minimal DFA recognising the same language
+     */
+    public DFA minimiseDFA(DFA dfa) {
         // Handle special case - empty DFA or no accepting states
         if (dfa.getNumStates() <= 1) {
             return copyDFA(dfa);
         }
 
-        Map<Integer, Set<Integer>> partitions = initializePartitions(dfa);
+        Map<Integer, Set<Integer>> partitions = initialisePartitions(dfa);
 
         // Special case - all states are accepting or all are non-accepting
         if (partitions.size() <= 1) {
@@ -28,7 +41,7 @@ public class DFAMinimiser {
                 partitions.put(1, otherStates);
             }
 
-            return buildMinimizedDFA(dfa, partitions);
+            return buildMinimisedDFA(dfa, partitions);
         }
 
         boolean changed = true;
@@ -59,14 +72,22 @@ public class DFAMinimiser {
             if (!newPartitions.isEmpty()) {
                 partitions = newPartitions;
             } else {
-                // Safety check to avoid infinite loops
                 break;
             }
         }
 
-        return buildMinimizedDFA(dfa, partitions);
+        return buildMinimisedDFA(dfa, partitions);
     }
 
+    /**
+     * Splits a partition based on the transitions of its states.
+     * States with different transition behaviours will be separated.
+     *
+     * @param dfa The DFA being minimised
+     * @param partition A set of states that are currently considered equivalent
+     * @param currentPartitions The current partitioning of all states
+     * @return A map of unique transition signatures to sets of states
+     */
     private Map<String, Set<Integer>> splitPartitionByTransitions(DFA dfa, Set<Integer> partition,
                                                                   Map<Integer, Set<Integer>> currentPartitions) {
         Map<String, Set<Integer>> splits = new HashMap<>();
@@ -91,6 +112,13 @@ public class DFAMinimiser {
         return splits;
     }
 
+    /**
+     * Finds the partition ID that contains a given state.
+     *
+     * @param partitions The current partitioning of all states
+     * @param state The state to locate
+     * @return The ID of the partition containing the state, or -1 if not found
+     */
     private int getPartitionId(Map<Integer, Set<Integer>> partitions, int state) {
         for (Map.Entry<Integer, Set<Integer>> entry : partitions.entrySet()) {
             if (entry.getValue().contains(state)) {
@@ -100,7 +128,14 @@ public class DFAMinimiser {
         return -1;
     }
 
-    private Map<Integer, Set<Integer>> initializePartitions(DFA dfa) {
+    /**
+     * Creates the initial partitioning of states into accepting and non-accepting.
+     * This is the starting point for the minimisation algorithm.
+     *
+     * @param dfa The DFA being minimised
+     * @return A map of partition IDs to sets of states
+     */
+    private Map<Integer, Set<Integer>> initialisePartitions(DFA dfa) {
         Map<Integer, Set<Integer>> partitions = new HashMap<>();
         Set<Integer> acceptingStates = new HashSet<>();
         Set<Integer> nonAcceptingStates = new HashSet<>();
@@ -134,13 +169,21 @@ public class DFAMinimiser {
         return partitions;
     }
 
-    private DFA buildMinimizedDFA(DFA dfa, Map<Integer, Set<Integer>> partitions) {
+    /**
+     * Constructs a new minimal DFA from the final partitioning.
+     * Each partition becomes a state in the new DFA, with appropriate transitions.
+     *
+     * @param dfa The original DFA
+     * @param partitions The final partitioning of states
+     * @return A new minimised DFA
+     */
+    private DFA buildMinimisedDFA(DFA dfa, Map<Integer, Set<Integer>> partitions) {
         if (partitions.isEmpty()) {
             // Handle edge case - return a copy of the original DFA
             return copyDFA(dfa);
         }
 
-        DFA minimizedDFA = new DFA(0);
+        DFA minimisedDFA = new DFA(0);
         Map<Set<Integer>, Integer> partitionToState = new HashMap<>();
         int stateCounter = 0;
 
@@ -157,12 +200,12 @@ public class DFAMinimiser {
 
             // Preserve accepting state information
             if (dfa.isAcceptingState(representativeState)) {
-                minimizedDFA.addAcceptingState(stateCounter);
+                minimisedDFA.addAcceptingState(stateCounter);
             }
 
             // Set start state
             if (partition.contains(dfa.getStartState())) {
-                minimizedDFA.setStartState(stateCounter);
+                minimisedDFA.setStartState(stateCounter);
             }
 
             stateCounter++;
@@ -185,15 +228,22 @@ public class DFAMinimiser {
                     Set<Integer> targetPartition = findPartition(partitions, nextState);
                     if (targetPartition != null && !targetPartition.isEmpty() && partitionToState.containsKey(targetPartition)) {
                         int toState = partitionToState.get(targetPartition);
-                        minimizedDFA.addTransition(fromState, symbol, toState);
+                        minimisedDFA.addTransition(fromState, symbol, toState);
                     }
                 }
             }
         }
 
-        return minimizedDFA;
+        return minimisedDFA;
     }
 
+    /**
+     * Finds the partition that contains a given state.
+     *
+     * @param partitions The current partitioning of all states
+     * @param state The state to locate
+     * @return The partition containing the state, or null if not found
+     */
     private Set<Integer> findPartition(Map<Integer, Set<Integer>> partitions, int state) {
         for (Set<Integer> partition : partitions.values()) {
             if (partition.contains(state)) {
@@ -203,6 +253,13 @@ public class DFAMinimiser {
         return null;
     }
 
+    /**
+     * Creates a deep copy of a DFA.
+     * This is used when no minimisation is possible or necessary.
+     *
+     * @param original The DFA to copy
+     * @return A new DFA with the same states and transitions
+     */
     private DFA copyDFA(DFA original) {
         DFA copy = new DFA(original.getStartState());
 

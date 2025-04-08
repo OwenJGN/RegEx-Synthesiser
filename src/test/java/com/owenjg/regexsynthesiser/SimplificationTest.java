@@ -1,7 +1,6 @@
 package com.owenjg.regexsynthesiser;
 
 import com.owenjg.regexsynthesiser.dfa.DFA;
-import com.owenjg.regexsynthesiser.simplification.RegexGeneraliser;
 import com.owenjg.regexsynthesiser.simplification.RegexSimplifier;
 import com.owenjg.regexsynthesiser.simplification.StateEliminationAlgorithm;
 import org.junit.jupiter.api.BeforeEach;
@@ -122,7 +121,7 @@ public class SimplificationTest {
         dfa.addTransition(1, '2', 2);
         dfa.addAcceptingState(2);
 
-        DFA generalised = generaliser.generalizeDFA(dfa);
+        DFA generalised = generaliser.generaliseDFA(dfa);
 
         // Check if the generalised DFA preserves accepting states
         assertTrue(generalised.isAcceptingState(2));

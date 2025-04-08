@@ -52,16 +52,16 @@ public class ValidationTest {
 
         // Test comparison text formatting
         String comparison = RegexComparator.compareRegexes(regex1, regex2);
-        assertTrue(comparison.contains("Pattern Analyzer: " + regex1));
+        assertTrue(comparison.contains("Pattern Analyser: " + regex1));
         assertTrue(comparison.contains("DFA-based: " + regex2));
 
         // Test null handling
         comparison = RegexComparator.compareRegexes(null, regex2);
-        assertTrue(comparison.contains("Pattern Analyzer: N/A"));
+        assertTrue(comparison.contains("Pattern Analyser: N/A"));
         assertTrue(comparison.contains("DFA-based: " + regex2));
 
         comparison = RegexComparator.compareRegexes(regex1, null);
-        assertTrue(comparison.contains("Pattern Analyzer: " + regex1));
+        assertTrue(comparison.contains("Pattern Analyser: " + regex1));
         assertTrue(comparison.contains("DFA-based: N/A"));
     }
 

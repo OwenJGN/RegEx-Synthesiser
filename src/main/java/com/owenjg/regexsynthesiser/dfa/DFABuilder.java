@@ -2,9 +2,19 @@ package com.owenjg.regexsynthesiser.dfa;
 
 import java.util.*;
 
+/**
+ * Responsible for constructing a DFA from positive and negative examples.
+ * This class uses heuristics to build an efficient automaton that accepts
+ * all positive examples and rejects all negative examples.
+ */
 public class DFABuilder {
     /**
-     * Builds a DFA from positive and negative examples with enhanced character class support
+     * Builds a DFA from positive and negative examples with enhanced character class support.
+     * The resulting DFA will accept all positive examples and reject all negative examples.
+     *
+     * @param positiveExamples List of strings that should be accepted by the DFA
+     * @param negativeExamples List of strings that should be rejected by the DFA
+     * @return A DFA that recognises the given language
      */
     public DFA buildDFAFromExamples(List<String> positiveExamples, List<String> negativeExamples) {
         // Create a prefix tree from positive examples
@@ -18,21 +28,25 @@ public class DFABuilder {
             markNegativeExamples(dfa, negativeExamples);
         }
 
-        // Optimize state transitions by merging similar transitions
-        optimizeTransitions(dfa);
+        // Optimise state transitions by merging similar transitions
+        optimiseTransitions(dfa);
 
         return dfa;
     }
 
     /**
-     * Builds a smart prefix tree that attempts to identify patterns in the input
+     * Builds a smart prefix tree that attempts to identify patterns in the input.
+     * This creates the initial automaton structure based on positive examples.
+     *
+     * @param examples List of positive example strings
+     * @return A DFA representing a prefix tree of the examples
      */
     private DFA buildSmartPrefixTree(List<String> examples) {
         DFA dfa = new DFA(0); // Start state is 0
         int nextState = 1;
 
         // Track character frequencies at each position
-        Map<Integer, Map<Character, Integer>> positionCharFreq = analyzeCharacterFrequencies(examples);
+        Map<Integer, Map<Character, Integer>> positionCharFreq = analyseCharacterFrequencies(examples);
 
         for (String example : examples) {
             int currentState = dfa.getStartState();
@@ -65,9 +79,13 @@ public class DFABuilder {
     }
 
     /**
-     * Analyze character frequencies at each position across examples
+     * Analyses character frequencies at each position across examples.
+     * This information can be used to identify patterns in the input.
+     *
+     * @param examples List of positive example strings
+     * @return A map of positions to character frequency maps
      */
-    private Map<Integer, Map<Character, Integer>> analyzeCharacterFrequencies(List<String> examples) {
+    private Map<Integer, Map<Character, Integer>> analyseCharacterFrequencies(List<String> examples) {
         Map<Integer, Map<Character, Integer>> positionCharFreq = new HashMap<>();
 
         for (String example : examples) {
@@ -82,7 +100,10 @@ public class DFABuilder {
     }
 
     /**
-     * Makes the DFA complete by adding transitions for all characters in the alphabet
+     * Makes the DFA complete by adding transitions for all characters in the alphabet.
+     * This ensures that the DFA has a defined transition for every possible input.
+     *
+     * @param dfa The DFA to complete
      */
     private void completeAutomaton(DFA dfa) {
         Set<Character> alphabet = dfa.getAlphabet();
@@ -122,7 +143,11 @@ public class DFABuilder {
     }
 
     /**
-     * Ensures states that accept negative examples are non-accepting
+     * Ensures states that accept negative examples are non-accepting.
+     * This modifies the DFA to reject all negative examples.
+     *
+     * @param dfa The DFA to modify
+     * @param negativeExamples List of strings that should be rejected
      */
     private void markNegativeExamples(DFA dfa, List<String> negativeExamples) {
         for (String example : negativeExamples) {
@@ -147,9 +172,12 @@ public class DFABuilder {
     }
 
     /**
-     * Optimize transitions by merging transitions that go to the same state
+     * Optimises transitions by merging transitions that go to the same target state.
+     * This can reduce the complexity of the DFA.
+     *
+     * @param dfa The DFA to optimise
      */
-    private void optimizeTransitions(DFA dfa) {
+    private void optimiseTransitions(DFA dfa) {
         // For each state, find sets of characters that transition to the same target state
         for (int state : dfa.getStates()) {
             Map<Character, Integer> transitions = dfa.getTransitions().get(state);
@@ -164,7 +192,7 @@ public class DFABuilder {
                         .add(entry.getKey());
             }
 
-            // For each target with multiple characters, see if we can optimize
+            // For each target with multiple characters, see if we can optimise
             for (Map.Entry<Integer, Set<Character>> entry : targetToChars.entrySet()) {
                 if (entry.getValue().size() <= 1) {
                     continue;

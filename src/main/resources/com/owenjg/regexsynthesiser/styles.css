@@ -1,19 +1,17 @@
-/* Modern, clean, and professional color scheme with improved aesthetics */
 .root {
     /* Color Palette */
-    -primary-color: #4a6baf;       /* Royal blue - more modern */
-    -primary-light: #6b8fd7;       /* Lighter primary for hover states */
-    -primary-dark: #2d4b92;        /* Darker primary for active states */
-    -secondary-color: #2e7d32;     /* Forest green for secondary actions */
-    -background-color: #f7f9fc;    /* Soft light blue background */
-    -card-background: #ffffff;     /* Card background */
-    -text-color: #2c3e50;          /* Dark blue-gray for text */
-    -text-light: #5a6a7e;          /* Lighter text for subtitles */
-    -accent-color: #e74c3c;        /* Red accent for warnings/errors */
-    -border-color: #e2e8f0;        /* Light gray for borders */
-    -success-color: #4caf50;       /* Green for success indicators */
+    -primary-color: #4a6baf;
+    -primary-light: #6b8fd7;
+    -primary-dark: #2d4b92;
+    -secondary-color: #2e7d32;
+    -background-color: #f7f9fc;
+    -card-background: #ffffff;
+    -text-color: #2c3e50;
+    -text-light: #5a6a7e;
+    -accent-color: #e74c3c;
+    -border-color: #e2e8f0;
+    -success-color: #4caf50;
 
-    /* Global Font Settings */
     -fx-font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     -fx-background-color: -background-color;
 }
@@ -149,7 +147,7 @@
     -fx-text-fill: -text-light;
 }
 
-/* Enhanced Regex Container Styling */
+/* Regex Container Styling */
 .regex-container {
     -fx-background-color: -card-background;
     -fx-background-radius: 10;

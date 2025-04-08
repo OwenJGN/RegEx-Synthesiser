@@ -18,13 +18,13 @@
     <Label fx:id="titleText" styleClass="title" text="Generated Regular Expressions" alignment="CENTER"/>
     <Label fx:id="elapsedTimeText" styleClass="status-label" text="" alignment="CENTER"/>
 
-    <!-- Pattern Analyzer Regex -->
+    <!-- Pattern Analyser Regex -->
     <VBox spacing="10" styleClass="regex-container">
         <Label styleClass="subtitle" text="Pattern Analyser:"/>
         <StackPane styleClass="regex-display-container" minHeight="100">
             <ScrollPane fitToWidth="true" styleClass="regex-scroll-pane">
                 <VBox>
-                    <Label fx:id="analyzerRegexLabel" styleClass="regex-text" wrapText="true"/>
+                    <Label fx:id="analyserRegexLabel" styleClass="regex-text" wrapText="true"/>
                 </VBox>
                 <padding>
                     <Insets top="12" right="12" bottom="12" left="12"/>
@@ -32,7 +32,7 @@
             </ScrollPane>
         </StackPane>
         <HBox alignment="CENTER_RIGHT">
-            <Button text="Copy" onAction="#onCopyAnalyzerButtonClick"
+            <Button text="Copy" onAction="#onCopyAnalyserButtonClick"
                     styleClass="button, copy-button" maxWidth="100"/>
         </HBox>
     </VBox>
