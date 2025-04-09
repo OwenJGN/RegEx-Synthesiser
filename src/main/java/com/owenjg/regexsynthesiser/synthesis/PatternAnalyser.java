@@ -305,7 +305,7 @@ public class PatternAnalyser {
             }
         }
 
-        // If we found multiple patterns, combine them
+        // If found multiple patterns, combine them
         if (patterns.size() > 1) {
             return "(" + String.join("|", patterns) + ")";
         } else if (patterns.size() == 1) {

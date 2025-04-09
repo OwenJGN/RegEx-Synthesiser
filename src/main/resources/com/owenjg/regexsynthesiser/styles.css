@@ -1,5 +1,4 @@
 .root {
-    /* Color Palette */
     -primary-color: #4a6baf;
     -primary-light: #6b8fd7;
     -primary-dark: #2d4b92;
@@ -16,7 +15,6 @@
     -fx-background-color: -background-color;
 }
 
-/* Typography */
 .label {
     -fx-text-fill: -text-color;
     -fx-font-size: 14px;

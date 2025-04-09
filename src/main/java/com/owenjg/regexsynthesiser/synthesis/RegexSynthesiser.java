@@ -104,19 +104,11 @@ public class RegexSynthesiser {
             // Generate regex using DFA-based approach
             String dfaRegex = createRegexFromDFA();
 
-            // Display both regexes in the console for debugging
-            System.out.println("Pattern Analyser Regex: " + analyserRegex);
-            System.out.println("DFA-based Regex: " + dfaRegex);
-
             // Validate both regexes against the provided examples
             boolean analyserValid = analyserRegex != null &&
                     exampleValidator.validateExamples(analyserRegex, positiveExamples, negativeExamples);
             boolean dfaValid = dfaRegex != null &&
                     exampleValidator.validateExamples(dfaRegex, positiveExamples, negativeExamples);
-
-            System.out.println("Validation results:");
-            System.out.println("Pattern Analyser regex valid: " + analyserValid);
-            System.out.println("DFA-based regex valid: " + dfaValid);
 
             // Mark invalid regexes clearly
             if (!analyserValid) {
@@ -155,10 +147,8 @@ public class RegexSynthesiser {
     private String createRegexFromAnalyser() {
         updateStatus("Analysing patterns in examples...");
         String regex = patternAnalyser.generalisePattern(positiveExamples, negativeExamples);
-        System.out.println("Initial pattern analyser result: " + regex);
 
         String simplifiedRegex = RegexSimplifier.simplify(regex);
-        System.out.println("Simplified pattern analyser regex: " + simplifiedRegex);
         return simplifiedRegex;
     }
 
@@ -178,11 +168,9 @@ public class RegexSynthesiser {
 
         updateStatus("Generating regex from DFA...");
         String regex = stateElimination.eliminateStates(minimisedDFA);
-        System.out.println("Raw DFA-based regex: " + regex);
 
         updateStatus("Simplifying DFA-based regex...");
         String simplifiedRegex = RegexSimplifier.simplify(regex);
-        System.out.println("Simplified DFA-based regex: " + simplifiedRegex);
 
         return simplifiedRegex;
     }

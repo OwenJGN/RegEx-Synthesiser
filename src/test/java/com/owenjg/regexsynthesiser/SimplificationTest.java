@@ -12,13 +12,11 @@ public class SimplificationTest {
 
     private RegexSimplifier simplifier;
     private StateEliminationAlgorithm eliminationAlgorithm;
-    private RegexGeneraliser generaliser;
 
     @BeforeEach
     void setUp() {
         simplifier = new RegexSimplifier();
         eliminationAlgorithm = new StateEliminationAlgorithm();
-        generaliser = new RegexGeneraliser();
     }
 
     @Test
@@ -109,25 +107,4 @@ public class SimplificationTest {
         assertTrue(regex.equals("(a|b)") || regex.equals("[ab]"));
     }
 
-
-    @Test
-    void testRegexGeneraliser() {
-        // Create a DFA to generalise
-        DFA dfa = new DFA(0);
-        dfa.addTransition(0, 'a', 1);
-        dfa.addTransition(0, 'b', 1);
-        dfa.addTransition(0, 'c', 1);
-        dfa.addTransition(1, '1', 2);
-        dfa.addTransition(1, '2', 2);
-        dfa.addAcceptingState(2);
-
-        DFA generalised = generaliser.generaliseDFA(dfa);
-
-        // Check if the generalised DFA preserves accepting states
-        assertTrue(generalised.isAcceptingState(2));
-        assertFalse(generalised.isAcceptingState(0));
-        assertFalse(generalised.isAcceptingState(1));
-
-        assertEquals(0, generalised.getStartState());
-    }
 }

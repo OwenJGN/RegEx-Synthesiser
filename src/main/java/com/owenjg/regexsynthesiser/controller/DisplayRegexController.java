@@ -259,7 +259,6 @@ public class DisplayRegexController {
 
         // Check if message starts with "ERROR:" or contains specific error keywords
         if (message.toUpperCase().startsWith("ERROR:")) {
-            // Add error style class
             statusText.getStyleClass().add("error");
         }
 

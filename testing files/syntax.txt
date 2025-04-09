@@ -1,0 +1,5 @@
+public static void main(String[] args)|private int calculateSum(int a, int b)|protected String formatName(String first, String last)|public boolean isValid(List<String> items, int maxSize)
+::
+void main|private calculateSum(int a, int b;|protected formatName(string first, string last)|public boolean isValid[List<String> items, int maxSize]
+::
+Generated Regex: (^[a-z]+\Q \E\QS\E[a-z]+\Q \E[a-z]+\QN\E[a-z]{3}\Q(\E\QS\E[a-z]+\Q \E[a-z]+\Q, \E\QS\E[a-z]+\Q \E[a-z]+\Q)\E$|^[a-z]+\Q \E[a-z]+\Q \E[a-z]+\Q \E[a-z]+\Q(\E[A-Z]+[a-z]+\Q[] \E[a-z]+\Q)\E$|^[a-z]+\Q \E[a-z]+\Q \E[a-z]{2}\QV\E[a-z]+\Q(\E\QL\E[a-z]{3}\Q<\E\QS\E[a-z]+\Q> \E[a-z]+\Q, \E[a-z]{3}\Q \E[a-z]{3}\QS\E[a-z]{3}\Q)\E$)

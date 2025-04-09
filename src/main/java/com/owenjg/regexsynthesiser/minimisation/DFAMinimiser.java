@@ -5,7 +5,7 @@ import com.owenjg.regexsynthesiser.dfa.DFA;
 import java.util.*;
 
 /**
- * Implements DFA minimisation using Hopcroft's algorithm.
+ * Implements DFA minimisation using a simplified version of Hopcroft's algorithm.
  * This class reduces the number of states in a DFA while preserving
  * the language it recognises, producing an equivalent minimal DFA.
  */
